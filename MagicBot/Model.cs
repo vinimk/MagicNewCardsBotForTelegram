@@ -12,7 +12,6 @@ namespace MagicBot
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite("Data Source=spoils.db");
-            this.Database.EnsureCreated();
         }
     }
 

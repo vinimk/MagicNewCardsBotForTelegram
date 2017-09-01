@@ -27,6 +27,7 @@ namespace MagicBot
         public MythicApiTasker(String apiUrl, String apiKey)
         {
             db = new SpoilDbContext();
+            db.Database.EnsureCreated();
             _apiKey = apiKey;
             _apiUrl = apiUrl;
         }
