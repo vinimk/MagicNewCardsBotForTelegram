@@ -13,21 +13,18 @@ namespace MagicBot
 {
     public class MythicApiTasker
     {
-        #region Attributes
-
-        private static string _apiUrl;
-        private static readonly string _pathGetCards = "APIv2/cards/by/spoils";
-        private static readonly string _pathImages = "card_images";
-        private static string _apiKey;
-
-        private SpoilDbContext db;
+        #region Definitions
+        private String _apiUrl;
+        private readonly String _pathGetCards = "APIv2/cards/by/spoils";
+        private readonly String _pathImages = "card_images";
+        private String _apiKey;
+        private Database _db;
         #endregion
 
         #region Constructors
-        public MythicApiTasker(String apiUrl, String apiKey)
+        public MythicApiTasker(String apiUrl, String apiKey, Database db)
         {
-            db = new SpoilDbContext();
-            db.Database.EnsureCreated();
+            _db = db;
             _apiKey = apiKey;
             _apiUrl = apiUrl;
         }
@@ -43,27 +40,15 @@ namespace MagicBot
         }
         #endregion
 
-        private String GetFromAPI()
+        #region Public Methods
+        public void GetNewCards()
         {
-            try
-            {
-                //creates an http client and makes the request for all the cards
-                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(String.Format("{0}/{1}?key={2}", _apiUrl, _pathGetCards, _apiKey));
-                httpWebRequest.ContentType = "application/json; charset=utf-8";
-                httpWebRequest.Accept = "application/json";
-                httpWebRequest.Method = WebRequestMethods.Http.Get;
-                using (var streamReader = new StreamReader(((HttpWebResponse)httpWebRequest.GetResponse()).GetResponseStream()))
-                {
-                    return streamReader.ReadToEnd();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("API Problem", ex);
-            }
+            CheckNewCards().Wait();
         }
+        #endregion
 
-        public void QueryApi()
+        #region Private Methods
+        private async Task CheckNewCards()
         {
             String jsonMsg = GetFromAPI();
 
@@ -81,8 +66,13 @@ namespace MagicBot
 
                 foreach (SpoilItem spoil in response.Items)
                 {
+                    //get the spoils from the database
+                    Task<List<SpoilItem>> taskDb = _db.GetAllSpoils();
+                    taskDb.Wait();
+                    List<SpoilItem> lstSpoils = taskDb.Result;
+
                     //see if the item is already on the database
-                    var data = db.Spoils.Where(x =>
+                    var data = lstSpoils.Where(x =>
                                                x.CardUrl.Equals(spoil.CardUrl) &&
                                                x.Folder.Equals(spoil.Folder) &&
                                                x.Date.Equals(spoil.Date)
@@ -92,7 +82,8 @@ namespace MagicBot
                     if (data.Count() == 0)
                     {
                         //adds in the database
-                        db.Spoils.Add(spoil);
+                        //does it async and doesn't need to wait because we don't need the 
+                        await _db.InsertSpoil(spoil);
 
                         try
                         {
@@ -120,10 +111,28 @@ namespace MagicBot
                         OnNewItem(spoil);
                     }
                 }
-
-                //save the changes to the database
-                db.SaveChanges(true);
             }
         }
+
+        private String GetFromAPI()
+        {
+            try
+            {
+                //creates an http client and makes the request for all the cards
+                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(String.Format("{0}/{1}?key={2}", _apiUrl, _pathGetCards, _apiKey));
+                httpWebRequest.ContentType = "application/json; charset=utf-8";
+                httpWebRequest.Accept = "application/json";
+                httpWebRequest.Method = WebRequestMethods.Http.Get;
+                using (var streamReader = new StreamReader(((HttpWebResponse)httpWebRequest.GetResponse()).GetResponseStream()))
+                {
+                    return streamReader.ReadToEnd();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("API Problem", ex);
+            }
+        }
+        #endregion
     }
 }
