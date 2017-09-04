@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
 using Newtonsoft.Json;
-using ImageMagick;
+using ImageSharp;
 using System.Net;
 using System.IO;
 
@@ -15,10 +15,10 @@ namespace MagicBot
     {
         #region Attributes
 
-        private static  string _apiUrl = "http://mythicspoilerapi.dungeonmastering.net";
+        private static string _apiUrl;
         private static readonly string _pathGetCards = "APIv2/cards/by/spoils";
         private static readonly string _pathImages = "card_images";
-        private static  string _apiKey = "dmluZWtvZXR6QGdtYWlsLmNvbQ==";
+        private static string _apiKey;
 
         private SpoilDbContext db;
         #endregion
@@ -96,7 +96,20 @@ namespace MagicBot
 
                         try
                         {
-                            spoil.Image = new MagickImage(String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl));
+                            //formats the full path of the image
+                            String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
+
+                            //do a webrequest to get the image
+                            HttpWebRequest imageRequest = (HttpWebRequest)WebRequest.Create(fullUrlImagePath);
+                            HttpWebResponse imageResponse = (HttpWebResponse)imageRequest.GetResponse();
+                            Stream imageStream = imageResponse.GetResponseStream();
+
+                            //loads the stream into an image object
+                            spoil.Image = Image.Load<Rgba32>(imageStream);
+
+                            //closes the webresponse and the stream
+                            imageStream.Close();
+                            imageResponse.Close();
                         }
                         catch (Exception ex)
                         {

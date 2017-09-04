@@ -1,10 +1,10 @@
-﻿using ImageMagick;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using System.IO;
+using ImageSharp;
 
 namespace MagicBot
 {
@@ -22,6 +22,6 @@ namespace MagicBot
         [JsonProperty("cardUrl")]
         public string CardUrl { get; set; }
         [NotMapped]
-        public MagickImage Image { get; set; }
+        public Image<Rgba32> Image { get; set; }
     }
 }
