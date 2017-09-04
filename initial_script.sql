@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `SpoilItem` (
   `SpoilItemId` int(11) NOT NULL,
   `Status` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `Folder` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `Date` date DEFAULT NULL,
+  `Date` datetime DEFAULT NULL,
   `Message` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `CardUrl` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Table where all the new spoils cards are saved';
