@@ -69,7 +69,7 @@ namespace MagicBot
                         FileToSend fts = new FileToSend();
                         fts.Content = stream;
                         fts.Filename = pathTempImage.Split('\\').Last();
-                        var test = await _botClient.SendPhotoAsync(chat, fts, caption);
+                        await _botClient.SendPhotoAsync(chat, fts, caption);
                     }
                 }
                 catch (ApiRequestException ex) //sometimes this exception is not a problem, like if the bot was removed from the group
