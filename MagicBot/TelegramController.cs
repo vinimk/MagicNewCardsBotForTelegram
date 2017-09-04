@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
-using ImageMagick;
+using ImageSharp;
 using System.IO;
 using Telegram.Bot.Exceptions;
+using System.Linq;
 
 namespace MagicBot
 {
@@ -27,22 +28,35 @@ namespace MagicBot
             updateChatList().Wait();
         }
 
-        public void SendImageToAll(MagickImage image, String caption = "")
+        public void SendImageToAll(Image<Rgba32> image, String caption = "")
         {
             sendImage(image, caption).Wait();
         }
 
-        private async Task sendImage(MagickImage image, String caption = "")
+        private async Task sendImage(Image<Rgba32> image, String caption = "")
         {
             //goes trough all the chats and send a message for each one
             foreach (Int64 id in _chatIds)
             {
                 try
                 {
-                    FileToSend photo = new FileToSend("New card", new MemoryStream(image.ToByteArray()));
-                    Message result = await _botClient.SendPhotoAsync(id, photo, caption);
+                    String pathTempImage = System.IO.Path.GetTempFileName();
+                    FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
+
+                    image.Save(fileStream, ImageSharp.ImageFormats.Png);
+                    fileStream.Flush();
+                    fileStream.Close();
+
+                    using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
+                    {
+                        FileToSend fts = new FileToSend();
+                        fts.Content = stream;
+                        fts.Filename = pathTempImage.Split('\\').Last();
+                        var test = await _botClient.SendPhotoAsync(id, fts, caption);
+                    }
+
                 }
-                catch(ApiRequestException ex) //sometimes this exception is not a problem, like if the bot was removed from the group
+                catch (ApiRequestException ex) //sometimes this exception is not a problem, like if the bot was removed from the group
                 {
                     Console.WriteLine(ex.ToString());
                 }

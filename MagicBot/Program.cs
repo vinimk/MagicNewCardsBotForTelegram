@@ -23,10 +23,11 @@ namespace MagicBot
         #endregion
         static void Main(string[] args)
         {
-            try
+
+            Init();
+            while (true)
             {
-                Init();
-                while (true)
+                try
                 {
                     Console.WriteLine("Updating telegram chat list");
                     _telegramController.Update();
@@ -38,11 +39,12 @@ namespace MagicBot
                     Console.WriteLine(String.Format("Going to sleep for {0} ms", _timeInternalMS));
                     Thread.Sleep(_timeInternalMS);
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
+
         }
 
         private static void Init()
@@ -52,7 +54,7 @@ namespace MagicBot
             var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json");
-            
+
             var config = builder.Build();
 
             _timeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
@@ -62,7 +64,7 @@ namespace MagicBot
 
             _telegramController = new TelegramController(config["TelegramBotApiKey"].ToString());
         }
-        
+
         private static void MythicApiTasker_New(object sender, SpoilItem newItem)
         {
             if (newItem.Image != null)
