@@ -17,18 +17,30 @@ namespace MagicBot
     {
         static void Main(string[] args)
         {
-            //first initialize our internals
-            Init();
+
+            try
+            {
+                //first initialize our internals
+                Init();
+
+                //first we update the list of chats
+                Console.WriteLine("Updating telegram chat list");
+                _telegramController.InitialUpdate();
+                _telegramController.HookUpdateEvent();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
             //the software will always be on a while true loop
             while (true)
             {
                 try
                 {
-                    //first we update the list of chats
-                    Console.WriteLine("Updating telegram chat list");
-                    _telegramController.Update();
-
-                    //then we get the new cards
+                    //first we update the internal list for telegram
+                    _telegramController.UpdateChatInternalList();
+                    //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Console.WriteLine("Getting new cards");
                     _mythicApiTasker.GetNewCards();
@@ -73,7 +85,7 @@ namespace MagicBot
             _telegramController = new TelegramController(config["TelegramBotApiKey"].ToString(), _db);
         }
         #endregion
-        
+
         #region Events Handlers
         private static void MythicApiTasker_New(object sender, SpoilItem newItem)
         {

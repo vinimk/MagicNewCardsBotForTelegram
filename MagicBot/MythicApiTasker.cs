@@ -43,12 +43,12 @@ namespace MagicBot
         #region Public Methods
         public void GetNewCards()
         {
-            CheckNewCards().Wait();
+            CheckNewCards();
         }
         #endregion
 
         #region Private Methods
-        private async Task CheckNewCards()
+        private void CheckNewCards()
         {
             String jsonMsg = GetFromAPI();
 
@@ -83,7 +83,7 @@ namespace MagicBot
                     {
                         //adds in the database
                         //does it async and doesn't need to wait because we don't need the 
-                        await _db.InsertSpoil(spoil);
+                        _db.InsertSpoil(spoil).Wait();
 
                         try
                         {

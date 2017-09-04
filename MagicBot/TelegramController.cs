@@ -6,6 +6,7 @@ using ImageSharp;
 using System.IO;
 using Telegram.Bot.Exceptions;
 using System.Linq;
+using Telegram.Bot.Args;
 
 namespace MagicBot
 {
@@ -15,6 +16,7 @@ namespace MagicBot
         #region Definitions
         private String _telegramBotApiKey;
         private Telegram.Bot.TelegramBotClient _botClient;
+        private List<Chat> _lstChats;
         private Database _db;
         private Int32 _offset;
         #endregion
@@ -26,81 +28,95 @@ namespace MagicBot
             _botClient = new Telegram.Bot.TelegramBotClient(_telegramBotApiKey);
             _db = db;
             _offset = 0;
+            _lstChats = new List<Chat>();
         }
         #endregion
 
         #region Public Methods
-        public void Update()
+        public void InitialUpdate()
         {
-            UpdateChatList().Wait();
+            UpdateChatInternalList();
+            GetInitialUpdateEvents();
         }
 
         public void SendImageToAll(Image<Rgba32> image, String caption = "")
         {
-            SendImage(image, caption).Wait();
+            SendImage(image, caption);
+        }
+
+        public void UpdateChatInternalList()
+        {
+            lock (_lstChats)
+            {
+                Task<List<Chat>> taskDb = _db.GetAllChats();
+                taskDb.Wait();
+                _lstChats = taskDb.Result;
+            }
         }
 
         #endregion
 
         #region Private Methods
-        private async Task SendImage(Image<Rgba32> image, String caption = "")
+        public void HookUpdateEvent()
         {
-            //get all chats from the database
-            Task<List<Chat>> taskDb = _db.GetAllChats();
-            taskDb.Wait();
-            List<Chat> lstChats = taskDb.Result;
-
-            //goes trough all the chats and send a message for each one
-            foreach (Chat chat in lstChats)
-            {
-                try
-                {
-                    //gets a temp file for the image
-                    String pathTempImage = System.IO.Path.GetTempFileName();
-                    //saves the image in the disk in the temp file
-                    FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
-                    image.Save(fileStream, ImageSharp.ImageFormats.Png);
-                    fileStream.Flush();
-                    fileStream.Close();
-
-                    //loads the image and sends it
-                    using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
-                    {
-                        FileToSend fts = new FileToSend();
-                        fts.Content = stream;
-                        fts.Filename = pathTempImage.Split('\\').Last();
-                        await _botClient.SendPhotoAsync(chat, fts, caption);
-                    }
-                }
-                catch (ApiRequestException ex) //sometimes this exception is not a problem, like if the bot was removed from the group
-                {
-                    if(ex.Message.Contains("bot was kicked"))
-                    {
-                        Console.WriteLine(String.Format("Bot was kicked from group {0}, consider setting isDeleted to true on table Chats", chat.Title));
-                        continue;
-                    }
-                    Console.WriteLine(ex.ToString());
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception("sendImage", ex);
-                }
-            }
-
-
+            //removes then adds the handler, that way it make sure that the event is handled
+            _botClient.OnUpdate -= botClientOnUpdate;
+            _botClient.OnUpdate += botClientOnUpdate;
+            _botClient.StartReceiving();
         }
 
-        private async Task UpdateChatList()
+        private void SendImage(Image<Rgba32> image, String caption = "")
+        {
+            lock (_lstChats)
+            {
+                //goes trough all the chats and send a message for each one
+                foreach (Chat chat in _lstChats)
+                {
+                    try
+                    {
+                        //gets a temp file for the image
+                        String pathTempImage = System.IO.Path.GetTempFileName();
+                        //saves the image in the disk in the temp file
+                        FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
+                        image.Save(fileStream, ImageSharp.ImageFormats.Png);
+                        fileStream.Flush();
+                        fileStream.Close();
+
+                        //loads the image and sends it
+                        using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
+                        {
+                            FileToSend fts = new FileToSend();
+                            fts.Content = stream;
+                            fts.Filename = pathTempImage.Split('\\').Last();
+                            _botClient.SendPhotoAsync(chat, fts, caption).Wait();
+                        }
+                    }
+                    catch (ApiRequestException ex) //sometimes this exception is not a problem, like if the bot was removed from the group
+                    {
+                        if (ex.Message.Contains("bot was kicked"))
+                        {
+                            Console.WriteLine(String.Format("Bot was kicked from group {0}, consider setting isDeleted to true on table Chats", chat.Title));
+                            continue;
+                        }
+                        Console.WriteLine(ex.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception("sendImage", ex);
+                    }
+                }
+            }
+        }
+
+        private void GetInitialUpdateEvents()
         {
             //get all updates
-            Update[] updates = await _botClient.GetUpdatesAsync(_offset);
+            Task<Update[]> taskTelegramUpdates = _botClient.GetUpdatesAsync(_offset);
+            taskTelegramUpdates.Wait();
+            Update[] updates = taskTelegramUpdates.Result;
 
             if (updates.Count() > 0)
             {
-                Task<List<Chat>> taskDb = _db.GetAllChats();
-                taskDb.Wait();
-                List<Chat> lstChats = taskDb.Result;
-
                 //check if the chatID is in the list, if it isn't, adds it
                 foreach (Update update in updates)
                 {
@@ -109,10 +125,11 @@ namespace MagicBot
                         //if the offset is equal to the update
                         //and there is only one message in the return
                         //it means that there are no new messages after the offset
-                        //so we can return
-                        if( updates.Count() == 1 &&
+                        //so we can stop this and add the hook for the on update event
+                        if (updates.Count() == 1 &&
                             _offset == update.Id)
                         {
+                            HookUpdateEvent();
                             return;
                         }
                         //else we have to continue updating
@@ -121,27 +138,55 @@ namespace MagicBot
                             _offset = update.Id;
                         }
 
+                        //check if the message is in good state
                         if (update.Message != null &&
                             update.Message.Chat != null)
                         {
-                            //query the list to see if the chat is already in the database
-                            //if it isn't adds it 
-                            var data = lstChats.Where(x => x.Id.Equals(update.Message.Chat.Id));
-
-                            if (data.Count() == 0)
-                            {
-                                await _db.InsertChat(update.Message.Chat);
-                                await _botClient.SendTextMessageAsync(update.Message.Chat, "Bot initialized sucessfully, new cards will be sent when avaliable");
-                            }
-
+                            //call the method to see if it is needed to add it to the database
+                            AddIfNeeded(update.Message.Chat);
                         }
                     }
                 }
                 //recursive call for offset checking
-                await UpdateChatList();
+                GetInitialUpdateEvents();
             }
         }
-            #endregion
 
+        private void AddIfNeeded(Chat chat)
+        {
+            lock (_lstChats)
+            {
+                //query the list to see if the chat is already in the database
+                //if it isn't adds it 
+                var data = _lstChats.Where(x => x.Id.Equals(chat.Id));
+
+                if (data.Count() == 0)
+                {
+                    _db.InsertChat(chat).Wait();
+                    _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable").Wait();
+                    Console.WriteLine(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
+                    //after adding a item in the database, update the list 
+                    UpdateChatInternalList();
+                }
+            }
         }
+        #endregion
+
+        #region Events
+        private void botClientOnUpdate(object sender, UpdateEventArgs args)
+        {
+            lock (_lstChats)
+            {
+                if (args != null &&
+                    args.Update != null &&
+                    args.Update.Message != null &&
+                    args.Update.Message.Chat != null)
+                {
+                    AddIfNeeded(args.Update.Message.Chat);
+                    _offset = args.Update.Id;
+                }
+            }
+        }
+        #endregion
     }
+}
