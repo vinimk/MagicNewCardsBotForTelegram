@@ -31,23 +31,42 @@ namespace MagicBot
         #endregion
 
         #region Public Methods
-        public void PublishNewImage(Image<Rgba32> image, String cardName)
+        public void PublishNewImage(SpoilItem spoil)
         {
+            List<IMedia> lstImages = new List<IMedia>();
+
             //gets a temp file for the image
             String pathTempImage = System.IO.Path.GetTempFileName();
             //saves the image in the disk in the temp file
             FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
-            image.Save(fileStream, ImageSharp.ImageFormats.Png);
+            spoil.Image.Save(fileStream, ImageSharp.ImageFormats.Png);
             fileStream.Flush();
             fileStream.Close();
 
             //loads the image and sends it
-            byte[] file1 = File.ReadAllBytes(pathTempImage);
-            var media = Upload.UploadImage(file1);
+            byte[] fileBits = File.ReadAllBytes(pathTempImage);
+            IMedia mainImage = Upload.UploadImage(fileBits);
+            lstImages.Add(mainImage);
 
-            var tweet = Tweet.PublishTweet(String.Format("New magic card: {0}", cardName), new Tweetinvi.Parameters.PublishTweetOptionalParameters
+            if (spoil.AdditionalImage != null)
             {
-                Medias = new List<IMedia> { media }
+                //gets a temp file for the image
+                String pathTempImageAdditional = System.IO.Path.GetTempFileName();
+                //saves the image in the disk in the temp file
+                FileStream fileStreamAdditional = new FileStream(pathTempImageAdditional, FileMode.OpenOrCreate);
+                spoil.AdditionalImage.Save(fileStreamAdditional, ImageSharp.ImageFormats.Png);
+                fileStreamAdditional.Flush();
+                fileStreamAdditional.Close();
+
+                //loads the image and sends it
+                byte[] fileBitsAdditional = File.ReadAllBytes(pathTempImageAdditional);
+                IMedia additionalImage = Upload.UploadImage(fileBitsAdditional);
+                lstImages.Add(additionalImage);
+            }
+
+            var tweet = Tweet.PublishTweet(spoil.TwitterText(), new Tweetinvi.Parameters.PublishTweetOptionalParameters
+            {
+                Medias = lstImages
             });
 
         }

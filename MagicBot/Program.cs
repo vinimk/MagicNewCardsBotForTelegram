@@ -10,7 +10,8 @@ using Telegram.Bot.Types.InputMessageContents;
 using Telegram.Bot.Types;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-
+using ImageSharp;
+using System.Collections.Generic;
 
 namespace MagicBot
 {
@@ -39,8 +40,6 @@ namespace MagicBot
             {
                 try
                 {
-                    //first we update the internal list for telegram
-                    _telegramController.UpdateChatInternalList();
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Console.WriteLine("Getting new cards");
@@ -48,6 +47,7 @@ namespace MagicBot
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
                     Console.WriteLine(String.Format("Going to sleep for {0} ms", _timeInternalMS));
+                    Task.WaitAll();
                     Thread.Sleep(_timeInternalMS);
                 }
                 catch (Exception ex)
@@ -62,7 +62,6 @@ namespace MagicBot
         private static MythicApiTasker _mythicApiTasker;
         private static TelegramController _telegramController;
         private static TwitterController _twitterController;
-        private static Database _db;
         private static int _timeInternalMS;
         #endregion
 
@@ -78,16 +77,15 @@ namespace MagicBot
             var config = builder.Build();
 
             _timeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
+            Database.SetConnectionString(config["ConnectionStringMySQL"]);
 
-            _db = new Database(config["ConnectionStringMySQL"]);
-
-            _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"].ToString(), config["MythicApiKey"].ToString(), _db);
+            _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"], config["MythicWebsiteUrl"], config["MythicApiKey"]);
             _mythicApiTasker.New += MythicApiTasker_New;
 
-            _telegramController = new TelegramController(config["TelegramBotApiKey"].ToString(), _db);
-            
+            _telegramController = new TelegramController(config["TelegramBotApiKey"]);
+
             _twitterController = new TwitterController(config["TwitterConsumerKey"], config["TwitterConsumerSecret"], config["TwitterAcessToken"], config["TwitterAcessTokenSecret"]);
-        
+
         }
         #endregion
 
@@ -97,10 +95,10 @@ namespace MagicBot
             if (newItem.Image != null)
             {
                 Console.WriteLine(String.Format("Sending new card {0} from folder {1} to everyone", newItem.CardUrl, newItem.Folder));
-                _telegramController.SendImageToAll(newItem.Image, newItem.CardUrl);
+                _telegramController.SendImageToAll(newItem);
 
                 Console.WriteLine(String.Format("Tweeting new card {0} from folder {1}", newItem.CardUrl, newItem.Folder));
-                _twitterController.PublishNewImage(newItem.Image, newItem.CardUrl);
+                _twitterController.PublishNewImage(newItem);
             }
         }
         #endregion
