@@ -182,6 +182,7 @@ namespace MagicBot
                     args.Update.Message != null &&
                     args.Update.Message.Chat != null)
                 {
+                    Console.WriteLine(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
                     AddIfNeeded(args.Update.Message.Chat);
                     _offset = args.Update.Id;
                 }

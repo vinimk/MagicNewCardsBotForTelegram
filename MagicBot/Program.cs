@@ -11,6 +11,7 @@ using Telegram.Bot.Types;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 
+
 namespace MagicBot
 {
     public class Program
@@ -60,6 +61,7 @@ namespace MagicBot
         #region Definitions
         private static MythicApiTasker _mythicApiTasker;
         private static TelegramController _telegramController;
+        private static TwitterController _twitterController;
         private static Database _db;
         private static int _timeInternalMS;
         #endregion
@@ -83,6 +85,9 @@ namespace MagicBot
             _mythicApiTasker.New += MythicApiTasker_New;
 
             _telegramController = new TelegramController(config["TelegramBotApiKey"].ToString(), _db);
+            
+            _twitterController = new TwitterController(config["TwitterConsumerKey"], config["TwitterConsumerSecret"], config["TwitterAcessToken"], config["TwitterAcessTokenSecret"]);
+        
         }
         #endregion
 
@@ -92,8 +97,10 @@ namespace MagicBot
             if (newItem.Image != null)
             {
                 Console.WriteLine(String.Format("Sending new card {0} from folder {1} to everyone", newItem.CardUrl, newItem.Folder));
-
                 _telegramController.SendImageToAll(newItem.Image, newItem.CardUrl);
+
+                Console.WriteLine(String.Format("Tweeting new card {0} from folder {1}", newItem.CardUrl, newItem.Folder));
+                _twitterController.PublishNewImage(newItem.Image, newItem.CardUrl);
             }
         }
         #endregion
