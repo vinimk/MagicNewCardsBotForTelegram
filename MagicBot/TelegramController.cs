@@ -91,18 +91,15 @@ namespace MagicBot
                             _botClient.SendPhotoAsync(chat, fts, caption).Wait();
                         }
                     }
-                    catch (ApiRequestException ex) //sometimes this exception is not a problem, like if the bot was removed from the group
+                    catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
                     {
                         if (ex.Message.Contains("bot was kicked"))
                         {
                             Console.WriteLine(String.Format("Bot was kicked from group {0}, consider setting isDeleted to true on table Chats", chat.Title));
                             continue;
                         }
-                        Console.WriteLine(ex.ToString());
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception("sendImage", ex);
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine(ex.StackTrace);
                     }
                 }
             }
