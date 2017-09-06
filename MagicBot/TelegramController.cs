@@ -59,11 +59,15 @@ namespace MagicBot
         private void SendImage(SpoilItem spoil)
         {
             //goes trough all the chats and send a message for each one
-            foreach (Chat chat in GetChatList())
+            List<Chat> lstChat = GetChatList();
+            foreach (Chat chat in lstChat)
             {
                 try
                 {
-                    Message firstMessage;
+                    Message replyToMessage;
+                    String messageText;
+                    //if the text is to big, we need to send it as a message afterwards
+                    Boolean isTextToBig = spoil.GetTelegramText().Length >= 200;
 
                     //gets a temp file for the image
                     String pathTempImage = System.IO.Path.GetTempFileName();
@@ -76,23 +80,33 @@ namespace MagicBot
                     //loads the image and sends it
                     using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
                     {
+                        if (isTextToBig)
+                        {
+                            messageText = String.Empty;
+                        }
+                        else
+                        {
+                            messageText = spoil.GetTelegramText();
+                        }
+
                         FileToSend fts = new FileToSend();
                         fts.Content = stream;
                         fts.Filename = pathTempImage.Split('\\').Last();
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, fts, spoil.TelegramText());
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText);
                         task.Wait();
-                        //stores this if we need to send a second image
-                        firstMessage = task.Result;
+                        //stores this if we need to send another message
+                        replyToMessage = task.Result;
                     }
+
                     //if there is a additional image, we send it as a reply
                     if (spoil.AdditionalImage != null)
                     {
                         String pathTempImageAdditional = System.IO.Path.GetTempFileName();
                         //saves the image in the disk in the temp file
                         FileStream fileStreamAdditional = new FileStream(pathTempImageAdditional, FileMode.OpenOrCreate);
-                        spoil.Image.Save(fileStreamAdditional, ImageSharp.ImageFormats.Png);
-                        fileStream.Flush();
-                        fileStream.Close();
+                        spoil.AdditionalImage.Save(fileStreamAdditional, ImageSharp.ImageFormats.Png);
+                        fileStreamAdditional.Flush();
+                        fileStreamAdditional.Close();
 
                         //loads the image and sends it
                         using (var stream = System.IO.File.Open(pathTempImageAdditional, FileMode.Open))
@@ -100,9 +114,18 @@ namespace MagicBot
                             FileToSend fts = new FileToSend();
                             fts.Content = stream;
                             fts.Filename = pathTempImageAdditional.Split('\\').Last();
-                            _botClient.SendPhotoAsync(chat, fts, spoil.TelegramText(), false, firstMessage.MessageId).Wait();
+                            Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText, false, replyToMessage.MessageId);
+                            task.Wait();
+                            //stores this if we need to send another message
+                            replyToMessage = task.Result;
                         }
                     }
+
+                    if (isTextToBig)
+                    {
+                        _botClient.SendTextMessageAsync(chat, spoil.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
+                    }
+
                 }
                 catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
                 {
@@ -119,7 +142,6 @@ namespace MagicBot
                     Console.WriteLine(ex.Message);
                     Console.WriteLine(ex.StackTrace);
                 }
-
             }
         }
 

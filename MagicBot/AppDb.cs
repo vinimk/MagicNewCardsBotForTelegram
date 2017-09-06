@@ -297,12 +297,24 @@ namespace MagicBot
                         });
                     }
 
-                    cmd.Parameters.Add(new MySqlParameter()
+                    if (spoil.Toughness >= 0)
                     {
-                        ParameterName = "@Toughness",
-                        DbType = DbType.Int32,
-                        Value = spoil.Toughness,
-                    });
+                        cmd.Parameters.Add(new MySqlParameter()
+                        {
+                            ParameterName = "@Toughness",
+                            DbType = DbType.VarNumeric,
+                            Value = spoil.Toughness,
+                        });
+                    }
+                    else
+                    {
+                        cmd.Parameters.Add(new MySqlParameter()
+                        {
+                            ParameterName = "@Toughness",
+                            DbType = DbType.VarNumeric,
+                            Value = null,
+                        });
+                    }
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {

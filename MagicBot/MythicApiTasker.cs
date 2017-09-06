@@ -79,17 +79,20 @@ namespace MagicBot
                         if (dctWebsiteCards.ContainsKey(spoil.CardUrl))
                         {
                             String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl);
-                            spoil.FullUrlWebSite = String.Format("{0}//{1}", _websiteUrl, urlCard);
+                            spoil.FullUrlWebSite = String.Format("{0}/{1}", _websiteUrl, urlCard);
                             spoil = GetAdditionalInfo(spoil);
                         }
+
+                        //formats the full path of the image
+                        String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
+                        spoil.ImageUrlWebSite = fullUrlImagePath;
+
                         //adds in the database
                         //does it async and doesn't need to wait because we don't need the 
                         Database.InsertSpoil(spoil).Wait();
 
                         try
                         {
-                            //formats the full path of the image
-                            String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
                             spoil.Image = GetImageFromUrl(fullUrlImagePath);
                         }
                         catch (Exception ex)
@@ -158,7 +161,10 @@ namespace MagicBot
                     var nodes = html.DocumentNode.SelectNodes("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[4]/td[1]");
                     foreach (var node in nodes)
                     {
-                        sb.Append(node.InnerText.Replace(@"<!--CARD TEXT-->", String.Empty).Trim());
+                        String txt = node.InnerText;
+                        txt = txt.Replace("\n\n", "\n");
+                        txt = txt.Replace(@"<!--CARD TEXT-->", String.Empty);
+                        sb.Append(txt.Trim());
                     }
                     spoil.Text = sb.ToString();
                 }
@@ -183,11 +189,14 @@ namespace MagicBot
                 catch { }
                 try
                 {
-                    String additionalImage = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[1]/img[1]").LastChild.InnerText.Trim();
-                    if (!String.IsNullOrEmpty(additionalImage))
-                    {
-                        spoil.AdditionalImage = GetImageFromUrl(additionalImage);
-                    }
+                    String outerHtml = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[1]/img[1]").OuterHtml;
+                    String[] tmp = outerHtml.Split("\"");
+                    String jpg = tmp[1];
+                    String urlSite = spoil.FullUrlWebSite.Substring(0, spoil.FullUrlWebSite.LastIndexOf('/'));
+                    String fullUrlAdditional = String.Format("{0}/{1}", urlSite, jpg);
+                    spoil.AdditionalImageUrlWebSite = fullUrlAdditional;
+                    spoil.AdditionalImage = GetImageFromUrl(fullUrlAdditional);
+
                 }
                 catch { }
             }

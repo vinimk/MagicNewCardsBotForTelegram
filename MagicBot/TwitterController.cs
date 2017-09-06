@@ -64,7 +64,7 @@ namespace MagicBot
                 lstImages.Add(additionalImage);
             }
 
-            var tweet = Tweet.PublishTweet(spoil.TwitterText(), new Tweetinvi.Parameters.PublishTweetOptionalParameters
+            var tweet = Tweet.PublishTweet(spoil.GetTwitterText(), new Tweetinvi.Parameters.PublishTweetOptionalParameters
             {
                 Medias = lstImages
             });

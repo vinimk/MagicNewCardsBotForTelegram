@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using System.IO;
 using ImageSharp;
+using System.Net;
 
 namespace MagicBot
 {
@@ -72,9 +73,9 @@ namespace MagicBot
             }
         }
 
-        public String TelegramText()
+        public String GetTelegramText()
         {
-            String lineBreak = "%0A";
+            String lineBreak = " ";
             StringBuilder sb = new StringBuilder();
 
             if (!String.IsNullOrEmpty(Name))
@@ -87,68 +88,106 @@ namespace MagicBot
                 sb.Append(CardUrl);
                 sb.Append(lineBreak);
             }
+
+            if (!String.IsNullOrEmpty(ManaCost))
+            {
+                sb.Append("- ");
+                sb.Append(ManaCost);
+                sb.Append(lineBreak);
+            }
+
             if (!String.IsNullOrEmpty(Type))
             {
                 sb.Append(Type);
-                if (!String.IsNullOrEmpty(ManaCost))
-                {
-                    sb.Append("-");
-                    sb.Append(ManaCost);
-                }
+                sb.Append(lineBreak);
             }
-            else if (!String.IsNullOrEmpty(ManaCost))
-            {
-                sb.Append(ManaCost);
-            }
+
             if (!String.IsNullOrEmpty(Text))
             {
                 sb.Append(Text);
                 sb.Append(lineBreak);
             }
-            if (!String.IsNullOrEmpty(Flavor))
-            {
-                sb.Append(Flavor);
-                sb.Append(lineBreak);
-            }
-            if (Power >= 0 || Toughness >= 0)
-            {
-                sb.Append(String.Format("P/T{0}-{1}", Power, Toughness));
-                sb.Append(lineBreak);
-            }
-            sb.Append(FullUrlWebSite);
-            sb.Append(lineBreak);
 
+            sb.Append(FullUrlWebSite);
 
             return sb.ToString(); //this is a linebreak for telegram API
         }
 
-        public String TwitterText()
+        public String GetTelegramTextFormatted()
         {
+            String lineBreak = Environment.NewLine;
             StringBuilder sb = new StringBuilder();
+
             if (!String.IsNullOrEmpty(Name))
             {
-                sb.AppendLine(Name);
+                sb.AppendFormat("<b>{0}</b>",WebUtility.HtmlEncode(Name));
             }
             else
             {
-                sb.AppendLine(CardUrl);
+                sb.AppendFormat("<b>{0}</b>",WebUtility.HtmlEncode(CardUrl));
+            }
+
+            if (!String.IsNullOrEmpty(ManaCost))
+            {
+                sb.AppendFormat(" - {0}", WebUtility.HtmlEncode(ManaCost));
+                sb.Append(lineBreak);
+            }
+            else
+            {
+                sb.Append(lineBreak);
             }
 
             if (!String.IsNullOrEmpty(Type))
             {
-                sb.Append(Type);
-                if (!String.IsNullOrEmpty(ManaCost))
-                {
-                    sb.Append("-");
-                    sb.Append(ManaCost);
-                }
-            }
-            else if (!String.IsNullOrEmpty(ManaCost))
-            {
-                sb.Append(ManaCost);
+                sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Type));
+                sb.Append(lineBreak);
             }
 
-            sb.AppendLine(FullUrlWebSite);
+            if (!String.IsNullOrEmpty(Text))
+            {
+                sb.Append(WebUtility.HtmlEncode(Text));
+                sb.Append(lineBreak);
+            }
+
+            if (!String.IsNullOrEmpty(Flavor))
+            {
+                sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Flavor));
+                sb.Append(lineBreak);
+            }
+
+            if (Power >= 0 || Toughness >= 0)
+            {
+                sb.Append(String.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
+                sb.Append(lineBreak);
+            }
+
+            sb.Append(FullUrlWebSite);
+
+
+            return sb.ToString();
+        }
+
+        public String GetTwitterText()
+        {
+            String lineBreak = Environment.NewLine;
+            StringBuilder sb = new StringBuilder();
+            if (!String.IsNullOrEmpty(Name))
+            {
+                sb.Append(Name);
+            }
+            else
+            {
+                sb.Append(CardUrl);
+            }
+
+            if (!String.IsNullOrEmpty(Type))
+            {
+                sb.Append(" - ");
+                sb.Append(Type);
+            }
+
+            sb.Append(lineBreak);
+            sb.Append(FullUrlWebSite);
 
             return sb.ToString();
         }
