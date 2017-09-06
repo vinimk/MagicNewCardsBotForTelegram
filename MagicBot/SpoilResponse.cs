@@ -8,10 +8,10 @@ namespace MagicBot
     public class SpoilResponse
     {
         [JsonProperty("status")]
-        public string Status { get; set; }
+        public String Status { get; set; }
         [JsonProperty("item")]
         public List<SpoilItem> Items { get; set; }
         [JsonProperty("logo")]
-        public string Logo { get; set; }
+        public String Logo { get; set; }
     }
 }

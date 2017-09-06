@@ -16,47 +16,38 @@ namespace MagicBot
         #region Definitions
         private String _telegramBotApiKey;
         private Telegram.Bot.TelegramBotClient _botClient;
-        private List<Chat> _lstChats;
-        private Database _db;
         private Int32 _offset;
         #endregion
 
         #region Constructors
-        public TelegramController(String apiKey, Database db)
+        public TelegramController(String apiKey)
         {
             _telegramBotApiKey = apiKey;
             _botClient = new Telegram.Bot.TelegramBotClient(_telegramBotApiKey);
-            _db = db;
             _offset = 0;
-            _lstChats = new List<Chat>();
         }
         #endregion
 
         #region Public Methods
         public void InitialUpdate()
         {
-            UpdateChatInternalList();
             GetInitialUpdateEvents();
         }
 
-        public void SendImageToAll(Image<Rgba32> image, String caption = "")
+        public void SendImageToAll(SpoilItem spoil)
         {
-            SendImage(image, caption);
+            SendImage(spoil);
         }
-
-        public void UpdateChatInternalList()
-        {
-            lock (_lstChats)
-            {
-                Task<List<Chat>> taskDb = _db.GetAllChats();
-                taskDb.Wait();
-                _lstChats = taskDb.Result;
-            }
-        }
-
         #endregion
 
         #region Private Methods
+        private List<Chat> GetChatList()
+        {
+            Task<List<Chat>> taskDb = Database.GetAllChats();
+            taskDb.Wait();
+            return taskDb.Result;
+        }
+
         public void HookUpdateEvent()
         {
             //removes then adds the handler, that way it make sure that the event is handled
@@ -65,42 +56,91 @@ namespace MagicBot
             _botClient.StartReceiving();
         }
 
-        private void SendImage(Image<Rgba32> image, String caption = "")
+        private void SendImage(SpoilItem spoil)
         {
-            lock (_lstChats)
+            //goes trough all the chats and send a message for each one
+            List<Chat> lstChat = GetChatList();
+            foreach (Chat chat in lstChat)
             {
-                //goes trough all the chats and send a message for each one
-                foreach (Chat chat in _lstChats)
+                try
                 {
-                    try
+                    Message replyToMessage;
+                    String messageText;
+                    //if the text is to big, we need to send it as a message afterwards
+                    Boolean isTextToBig = spoil.GetTelegramText().Length >= 200;
+
+                    //gets a temp file for the image
+                    String pathTempImage = System.IO.Path.GetTempFileName();
+                    //saves the image in the disk in the temp file
+                    FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
+                    spoil.Image.Save(fileStream, ImageSharp.ImageFormats.Png);
+                    fileStream.Flush();
+                    fileStream.Close();
+
+                    //loads the image and sends it
+                    using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
                     {
-                        //gets a temp file for the image
-                        String pathTempImage = System.IO.Path.GetTempFileName();
+                        if (isTextToBig)
+                        {
+                            messageText = String.Empty;
+                        }
+                        else
+                        {
+                            messageText = spoil.GetTelegramText();
+                        }
+
+                        FileToSend fts = new FileToSend();
+                        fts.Content = stream;
+                        fts.Filename = pathTempImage.Split('\\').Last();
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText);
+                        task.Wait();
+                        //stores this if we need to send another message
+                        replyToMessage = task.Result;
+                    }
+
+                    //if there is a additional image, we send it as a reply
+                    if (spoil.AdditionalImage != null)
+                    {
+                        String pathTempImageAdditional = System.IO.Path.GetTempFileName();
                         //saves the image in the disk in the temp file
-                        FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
-                        image.Save(fileStream, ImageSharp.ImageFormats.Png);
-                        fileStream.Flush();
-                        fileStream.Close();
+                        FileStream fileStreamAdditional = new FileStream(pathTempImageAdditional, FileMode.OpenOrCreate);
+                        spoil.AdditionalImage.Save(fileStreamAdditional, ImageSharp.ImageFormats.Png);
+                        fileStreamAdditional.Flush();
+                        fileStreamAdditional.Close();
 
                         //loads the image and sends it
-                        using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
+                        using (var stream = System.IO.File.Open(pathTempImageAdditional, FileMode.Open))
                         {
                             FileToSend fts = new FileToSend();
                             fts.Content = stream;
-                            fts.Filename = pathTempImage.Split('\\').Last();
-                            _botClient.SendPhotoAsync(chat, fts, caption).Wait();
+                            fts.Filename = pathTempImageAdditional.Split('\\').Last();
+                            Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText, false, replyToMessage.MessageId);
+                            task.Wait();
+                            //stores this if we need to send another message
+                            replyToMessage = task.Result;
                         }
                     }
-                    catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
+
+                    if (isTextToBig)
                     {
-                        if (ex.Message.Contains("bot was kicked"))
-                        {
-                            Console.WriteLine(String.Format("Bot was kicked from group {0}, consider setting isDeleted to true on table Chats", chat.Title));
-                            continue;
-                        }
-                        Console.WriteLine(ex.Message);
-                        Console.WriteLine(ex.StackTrace);
+                        _botClient.SendTextMessageAsync(chat, spoil.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
                     }
+
+                }
+                catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
+                {
+                    if (ex.Message.Contains("bot was kicked"))
+                    {
+                        Console.WriteLine(String.Format("Bot was kicked from group {0}, consider setting isDeleted to true on table Chats", chat.Title));
+                        continue;
+                    }
+                    if (ex.Message.Contains("banned"))
+                    {
+                        Console.WriteLine(String.Format("Bot was banned by user {0}, consider setting isDeleted to true on table Chats", chat.FirstName));
+                        continue;
+                    }
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(ex.StackTrace);
                 }
             }
         }
@@ -151,20 +191,17 @@ namespace MagicBot
 
         private void AddIfNeeded(Chat chat)
         {
-            lock (_lstChats)
-            {
-                //query the list to see if the chat is already in the database
-                //if it isn't adds it 
-                var data = _lstChats.Where(x => x.Id.Equals(chat.Id));
+            //query the list to see if the chat is already in the database
+            Task<Boolean> taskDb = Database.IsChatInDatabase(chat);
+            taskDb.Wait();
 
-                if (data.Count() == 0)
-                {
-                    _db.InsertChat(chat).Wait();
-                    _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable").Wait();
-                    Console.WriteLine(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
-                    //after adding a item in the database, update the list 
-                    UpdateChatInternalList();
-                }
+            //if it isn't adds it 
+            if (!taskDb.Result)
+            {
+                Database.InsertChat(chat).Wait();
+                _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable").Wait();
+                Console.WriteLine(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
+                //after adding a item in the database, update the list 
             }
         }
         #endregion
@@ -172,17 +209,14 @@ namespace MagicBot
         #region Events
         private void botClientOnUpdate(object sender, UpdateEventArgs args)
         {
-            lock (_lstChats)
+            if (args != null &&
+                args.Update != null &&
+                args.Update.Message != null &&
+                args.Update.Message.Chat != null)
             {
-                if (args != null &&
-                    args.Update != null &&
-                    args.Update.Message != null &&
-                    args.Update.Message.Chat != null)
-                {
-                    Console.WriteLine(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
-                    AddIfNeeded(args.Update.Message.Chat);
-                    _offset = args.Update.Id;
-                }
+                Console.WriteLine(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
+                AddIfNeeded(args.Update.Message.Chat);
+                _offset = args.Update.Id;
             }
         }
         #endregion

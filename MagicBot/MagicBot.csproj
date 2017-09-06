@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="appsettings.json" CopyToPublishDirectory="Always" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.5.1" />
     <PackageReference Include="ImageSharp" Version="1.0.0-alpha9-00194" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.0.0" />
@@ -16,4 +17,5 @@
     <PackageReference Include="Telegram.Bot" Version="13.1.0" />
     <PackageReference Include="TweetinviAPI" Version="2.0.0" />
   </ItemGroup>
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JSONSchema="" /></VisualStudio></ProjectExtensions>
 </Project>
