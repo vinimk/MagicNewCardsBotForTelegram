@@ -82,6 +82,12 @@ namespace MagicBot
                             spoil.FullUrlWebSite = String.Format("{0}/{1}", _websiteUrl, urlCard);
                             spoil = GetAdditionalInfo(spoil);
                         }
+                        else if (dctWebsiteCards.ContainsKey(spoil.CardUrl.Replace("1", String.Empty))) //sometimes the api does weird things and returns a random 1 on the end, just test for it also
+                        {
+                            String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl.Replace("1", String.Empty));
+                            spoil.FullUrlWebSite = String.Format("{0}/{1}", _websiteUrl, urlCard);
+                            spoil = GetAdditionalInfo(spoil);
+                        }
 
                         //formats the full path of the image
                         String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
@@ -174,17 +180,25 @@ namespace MagicBot
 
                 try
                 {
-                    String powerToughness = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[7]/td[2]/font[1]").ChildNodes[2].InnerText.Trim();
-
-                    if (powerToughness.Contains("/"))
+                    var nodes = html.DocumentNode.SelectNodes("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[7]/td[2]/font[1]");
+                    
+                    foreach(var node in nodes)
                     {
-                        String[] arrPt = powerToughness.Split('/');
-                        if (arrPt.Length == 2)
+                        var powerToughness = node.ChildNodes[2].InnerText.Trim();
+                        powerToughness = powerToughness.Replace("\n", String.Empty);
+                        if (powerToughness.Contains("/"))
                         {
-                            spoil.Power = Int32.Parse(arrPt[0]);
-                            spoil.Toughness = Int32.Parse(arrPt[1]);
+                            String[] arrPt = powerToughness.Split('/');
+                            if (arrPt.Length == 2)
+                            {
+                                spoil.Power = Int32.Parse(arrPt[0]);
+                                spoil.Toughness = Int32.Parse(arrPt[1]);
+                                break;
+                            }
                         }
                     }
+
+                    
                 }
                 catch { }
                 try
@@ -193,9 +207,12 @@ namespace MagicBot
                     String[] tmp = outerHtml.Split("\"");
                     String jpg = tmp[1];
                     String urlSite = spoil.FullUrlWebSite.Substring(0, spoil.FullUrlWebSite.LastIndexOf('/'));
-                    String fullUrlAdditional = String.Format("{0}/{1}", urlSite, jpg);
-                    spoil.AdditionalImageUrlWebSite = fullUrlAdditional;
-                    spoil.AdditionalImage = GetImageFromUrl(fullUrlAdditional);
+                    if (jpg != spoil.CardUrl)
+                    {
+                        String fullUrlAdditional = String.Format("{0}/{1}", urlSite, jpg);
+                        spoil.AdditionalImageUrlWebSite = fullUrlAdditional;
+                        spoil.AdditionalImage = GetImageFromUrl(fullUrlAdditional);
+                    }
 
                 }
                 catch { }

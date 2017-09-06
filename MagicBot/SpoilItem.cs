@@ -91,26 +91,31 @@ namespace MagicBot
 
             if (!String.IsNullOrEmpty(ManaCost))
             {
-                sb.Append("- ");
-                sb.Append(ManaCost);
+                sb.AppendFormat("|{0}|", ManaCost);
                 sb.Append(lineBreak);
             }
 
             if (!String.IsNullOrEmpty(Type))
             {
-                sb.Append(Type);
+                sb.AppendFormat("{0}.", Type);
                 sb.Append(lineBreak);
             }
 
             if (!String.IsNullOrEmpty(Text))
             {
-                sb.Append(Text);
+                sb.AppendFormat("{0}.", Text);
+                sb.Append(lineBreak);
+            }
+
+            if (Power >= 0 || Toughness >= 0)
+            {
+                sb.AppendFormat(" ({0}/{1})", Power, Toughness);
                 sb.Append(lineBreak);
             }
 
             sb.Append(FullUrlWebSite);
 
-            return sb.ToString(); //this is a linebreak for telegram API
+            return sb.ToString().Replace("\n", " ").Replace("  ", " "); //this is a linebreak for telegram API
         }
 
         public String GetTelegramTextFormatted()
@@ -120,11 +125,11 @@ namespace MagicBot
 
             if (!String.IsNullOrEmpty(Name))
             {
-                sb.AppendFormat("<b>{0}</b>",WebUtility.HtmlEncode(Name));
+                sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(Name));
             }
             else
             {
-                sb.AppendFormat("<b>{0}</b>",WebUtility.HtmlEncode(CardUrl));
+                sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(CardUrl));
             }
 
             if (!String.IsNullOrEmpty(ManaCost))
