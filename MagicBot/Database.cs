@@ -36,8 +36,7 @@ namespace MagicBot
                                         SET     IsCardSent =    @IsCardSent
                                         WHERE 
                                                 Folder =        @Folder AND
-                                                Date =          @Date AND
-                                                CardUrl =       @CardUrl";
+                                                (CardUrl = @CardUrl OR CardUrl = @CardUrlAlt OR CardUrl = @CardUrlAlt2)";
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
@@ -55,17 +54,25 @@ namespace MagicBot
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
-                        ParameterName = "@Date",
-                        DbType = DbType.DateTime,
-                        Value = spoil.Date,
-                    });
-
-                    cmd.Parameters.Add(new MySqlParameter()
-                    {
                         ParameterName = "@CardUrl",
                         DbType = DbType.StringFixedLength,
                         Value = spoil.CardUrl,
                     });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg",
+                    });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt2",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 4)  + "1.jpg",
+                    });
+
 
                     cmd.ExecuteNonQuery();
                     ret = (Int64)cmd.LastInsertedId;
@@ -93,8 +100,7 @@ namespace MagicBot
                                         SET     TrysToGetFromWebsite =    @TrysToGetFromWebsite
                                         WHERE 
                                                 Folder =        @Folder AND
-                                                Date =          @Date AND
-                                                CardUrl =       @CardUrl";
+                                                (CardUrl = @CardUrl OR CardUrl = @CardUrlAlt OR CardUrl = @CardUrlAlt2)";
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
@@ -112,16 +118,23 @@ namespace MagicBot
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
-                        ParameterName = "@Date",
-                        DbType = DbType.DateTime,
-                        Value = spoil.Date,
+                        ParameterName = "@CardUrl",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
-                        ParameterName = "@CardUrl",
+                        ParameterName = "@CardUrlAlt",
                         DbType = DbType.StringFixedLength,
-                        Value = spoil.CardUrl,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg",
+                    });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt2",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 4)  + "1.jpg",
                     });
 
                     cmd.ExecuteNonQuery();
@@ -155,8 +168,7 @@ namespace MagicBot
                                             FROM SpoilItem
                                             WHERE 
                                             Folder = @Folder AND
-                                            Date = @Date AND
-                                            CardUrl = @CardUrl AND
+                                            (CardUrl = @CardUrl OR CardUrl = @CardUrlAlt OR CardUrl = @CardUrlAlt2) AND
                                             IsCardSent = @IsCardSent";
 
                     cmd.Parameters.Add(new MySqlParameter()
@@ -164,13 +176,6 @@ namespace MagicBot
                         ParameterName = "@Folder",
                         DbType = DbType.StringFixedLength,
                         Value = spoil.Folder,
-                    });
-
-                    cmd.Parameters.Add(new MySqlParameter()
-                    {
-                        ParameterName = "@Date",
-                        DbType = DbType.DateTime,
-                        Value = spoil.Date,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
@@ -185,6 +190,20 @@ namespace MagicBot
                         ParameterName = "@IsCardSent",
                         DbType = DbType.Boolean,
                         Value = isSent,
+                    });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg",
+                    });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt2",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 4)  + "1.jpg",
                     });
 
                     using (DbDataReader reader = cmd.ExecuteReader())
@@ -303,21 +322,13 @@ namespace MagicBot
                                                     FROM SpoilItem
                                            WHERE 
                                             Folder = @Folder AND
-                                            Date = @Date AND
-                                            CardUrl = @CardUrl ";
+                                            (CardUrl = @CardUrl OR CardUrl = @CardUrlAlt OR CardUrl = @CardUrlAlt2)";
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@Folder",
                         DbType = DbType.StringFixedLength,
                         Value = spoil.Folder,
-                    });
-
-                    cmd.Parameters.Add(new MySqlParameter()
-                    {
-                        ParameterName = "@Date",
-                        DbType = DbType.DateTime,
-                        Value = spoil.Date,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
@@ -333,6 +344,20 @@ namespace MagicBot
                         ParameterName = "@Folder",
                         DbType = DbType.StringFixedLength,
                         Value = spoil.Folder,
+                    });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg",
+                    });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt2",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 4)  + "1.jpg",
                     });
 
                     using (DbDataReader reader = cmd.ExecuteReader())
@@ -597,8 +622,7 @@ namespace MagicBot
                                                 AdditionalImageUrlWebSite =     @AdditionalImageUrlWebSite
                                                 WHERE 
                                                 Folder =                        @FolderWhere AND
-                                                Date =                          @DateWhere AND
-                                                CardUrl =                       @CardUrlWhere AND
+                                                (CardUrl = @CardUrl OR CardUrl = @CardUrlAlt OR CardUrl = @CardUrlAlt2) AND
                                                 IsCardSent =                    @IsCardSentWhere";
 
                     cmd.Parameters.Add(new MySqlParameter()
@@ -608,12 +632,6 @@ namespace MagicBot
                         Value = spoil.Folder,
                     });
 
-                    cmd.Parameters.Add(new MySqlParameter()
-                    {
-                        ParameterName = "@DateWhere",
-                        DbType = DbType.DateTime,
-                        Value = spoil.Date,
-                    });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
@@ -621,6 +639,21 @@ namespace MagicBot
                         DbType = DbType.StringFixedLength,
                         Value = spoil.CardUrl,
                     });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg",
+                    });
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@CardUrlAlt2",
+                        DbType = DbType.StringFixedLength,
+                        Value = spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 4)  + "1.jpg",
+                    });
+
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {

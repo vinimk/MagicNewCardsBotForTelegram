@@ -206,6 +206,46 @@ namespace MagicBot
 
             return sb.ToString();
         }
+
+
+        public Boolean HasAnyExtraInfo()
+        {
+            if (!String.IsNullOrEmpty(ManaCost))
+            {
+                return true;
+            }
+            if (!String.IsNullOrEmpty(Type))
+            {
+                return true;
+            }
+            if (!String.IsNullOrEmpty(Text))
+            {
+                return true;
+            }
+            if (!String.IsNullOrEmpty(Flavor))
+            {
+                return true;
+            }
+            if (!String.IsNullOrEmpty(Illustrator))
+            {
+                return true;
+            }
+            if (Power > 0)
+            {
+                return true;
+            }
+            if (Toughness > 0)
+            {
+                return true;
+            }
+            if (!String.IsNullOrEmpty(AdditionalImageUrlWebSite))
+            {
+                return true;
+            }
+
+            return false;
+
+        }
         #endregion
     }
 }

@@ -79,7 +79,7 @@ namespace MagicBot
             _timeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
             Database.SetConnectionString(config["ConnectionStringMySQL"]);
 
-            _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"], config["MythicWebsiteUrl"], config["MythicApiKey"], Int32.Parse(config["NumberOfTrysBeforeIgnoringWebSite"]));
+            _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"], config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"], config["MythicApiKey"], Int32.Parse(config["NumberOfTrysBeforeIgnoringWebSite"]));
             _mythicApiTasker.New += MythicApiTasker_New;
 
             _telegramController = new TelegramController(config["TelegramBotApiKey"]);
@@ -97,7 +97,7 @@ namespace MagicBot
                 Console.WriteLine(String.Format("Sending new card {0} from folder {1} to everyone", newItem.CardUrl, newItem.Folder));
                 try
                 {
-                    _telegramController.SendImageToAll(newItem);
+                    Task.Run(() => _telegramController.SendImageToAll(newItem));
                 }
                 catch (Exception ex)
                 {

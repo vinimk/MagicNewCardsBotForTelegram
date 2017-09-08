@@ -54,6 +54,12 @@ namespace MagicBot
         {
             //goes trough all the chats and send a message for each one
             List<Chat> lstChat = Database.GetAllChats();
+            // List<Chat> lstChat = new List<Chat>(){
+            //     new Chat()
+            //     {
+            //         Id = -1001108555769,
+            //     }
+            // };
             foreach (Chat chat in lstChat)
             {
                 try
@@ -125,12 +131,12 @@ namespace MagicBot
                 {
                     if (ex.Message.Contains("bot was kicked"))
                     {
-                        Console.WriteLine(String.Format("Bot was kicked from group {0}, consider setting isDeleted to true on table Chats", chat.Title));
+                        Console.WriteLine(String.Format("Bot was kicked from group {0}, consider deletting him from the database on table Chats", chat.Title));
                         continue;
                     }
-                    if (ex.Message.Contains("banned"))
+                    if (ex.Message.Contains("bot was blocked by the user"))
                     {
-                        Console.WriteLine(String.Format("Bot was banned by user {0}, consider setting isDeleted to true on table Chats", chat.FirstName));
+                        Console.WriteLine(String.Format("Bot was blocked by user {0}, consider deletting him from the database on table Chats", chat.FirstName));
                         continue;
                     }
                     Console.WriteLine(ex.Message);

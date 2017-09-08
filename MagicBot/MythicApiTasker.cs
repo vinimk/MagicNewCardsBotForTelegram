@@ -17,6 +17,7 @@ namespace MagicBot
         #region Definitions
         private String _apiUrl;
         private String _websiteUrl;
+        private String _pathNewCards;
         private readonly String _pathGetCards = "APIv2/cards/by/spoils";
         private readonly String _pathImages = "card_images";
         private Int32 _numberOfTrysBeforeIgnoringWebSite;
@@ -24,10 +25,11 @@ namespace MagicBot
         #endregion
 
         #region Constructors
-        public MythicApiTasker(String apiUrl, String websiteUrl, String apiKey, Int32 numberOfTrysBeforeIgnoringWebSite)
+        public MythicApiTasker(String apiUrl, String websiteUrl, String pathNewCards, String apiKey, Int32 numberOfTrysBeforeIgnoringWebSite)
         {
             _apiUrl = apiUrl;
             _websiteUrl = websiteUrl;
+            _pathNewCards = pathNewCards;
             _apiKey = apiKey;
             _numberOfTrysBeforeIgnoringWebSite = numberOfTrysBeforeIgnoringWebSite;
         }
@@ -73,29 +75,34 @@ namespace MagicBot
                 {
                     SpoilItem spoil = sp;
                     //check if the spoil is in the database
-                    //if is not in the database
+                    //if is not in the database AND has NOT been sent
                     if (!Database.IsSpoilInDatabase(spoil, true))
                     {
                         if (dctWebsiteCards.ContainsKey(spoil.CardUrl))
                         {
                             String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl);
-                            spoil.FullUrlWebSite = String.Format("{0}/{1}", _websiteUrl, urlCard);
+                            spoil.FullUrlWebSite = String.Format("{0}{1}", _websiteUrl, urlCard);
                             spoil = GetAdditionalInfo(spoil);
                         }
                         else if (dctWebsiteCards.ContainsKey(spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg")) //sometimes the api does weird things and returns a random 1 on the end, just test for it also
                         {
                             String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl.Replace("1", String.Empty));
-                            spoil.FullUrlWebSite = String.Format("{0}/{1}", _websiteUrl, urlCard);
+                            spoil.FullUrlWebSite = String.Format("{0}{1}", _websiteUrl, urlCard);
                             spoil = GetAdditionalInfo(spoil);
                         }
-                        else //if it isn't on the site add the counter on the database
+
+                        //if the spoil doesn't have any extra info, it will add to the database but it will not send it out yet
+                        if (!spoil.HasAnyExtraInfo())
                         {
                             //if it is below or limit for waiting, we just advance and hope that the next time it is on the website
-                            if (Database.InsertSimpleSpoilAndOrAddCounter(spoil) < _numberOfTrysBeforeIgnoringWebSite)
+                            Int32 numberOfTrys = Database.InsertSimpleSpoilAndOrAddCounter(spoil);
+                            if (numberOfTrys < _numberOfTrysBeforeIgnoringWebSite)
                             {
                                 continue;
                             }
                         }
+
+
 
                         //formats the full path of the image
                         String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
@@ -220,15 +227,19 @@ namespace MagicBot
                 catch { }
                 try
                 {
-                    String outerHtml = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[1]/img[1]").OuterHtml;
-                    String[] tmp = outerHtml.Split("\"");
-                    String jpg = tmp[1];
-                    String urlSite = spoil.FullUrlWebSite.Substring(0, spoil.FullUrlWebSite.LastIndexOf('/'));
-                    if (jpg != spoil.CardUrl)
+                    HtmlNode node = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[1]/img[1]");
+                    if (node != null)
                     {
-                        String fullUrlAdditional = String.Format("{0}/{1}", urlSite, jpg);
-                        spoil.AdditionalImageUrlWebSite = fullUrlAdditional;
-                        spoil.AdditionalImage = GetImageFromUrl(fullUrlAdditional);
+                        String outerHtml = node.OuterHtml;
+                        String[] tmp = outerHtml.Split("\"");
+                        String jpg = tmp[1];
+                        String urlSite = spoil.FullUrlWebSite.Substring(0, spoil.FullUrlWebSite.LastIndexOf('/'));
+                        if (jpg != spoil.CardUrl)
+                        {
+                            String fullUrlAdditional = String.Format("{0}/{1}", urlSite, jpg);
+                            spoil.AdditionalImageUrlWebSite = fullUrlAdditional;
+                            spoil.AdditionalImage = GetImageFromUrl(fullUrlAdditional);
+                        }
                     }
 
                 }
@@ -245,22 +256,28 @@ namespace MagicBot
             {
                 //loads the website
                 HtmlWeb htmlWeb = new HtmlWeb();
-                HtmlDocument doc = htmlWeb.Load(_websiteUrl);
+                HtmlDocument doc = htmlWeb.Load(String.Format("{0}{1}", _websiteUrl, _pathNewCards));
 
                 //all the cards are a a href so we get all of that
-                HtmlNodeCollection cards = doc.DocumentNode.SelectNodes("//a");
+                HtmlNodeCollection cards = doc.DocumentNode.SelectNodes("//img");
                 foreach (HtmlNode card in cards)
                 {
                     //also the cards have a special class called 'card', so we use it to get the right ones
-                    if (card.Attributes.Contains("class") && card.Attributes["class"].Value == "card")
+                    if (card.Attributes.Contains("src") &&
+                    card.Attributes["src"].Value.ToString().Contains("cards") &&
+                    card.Attributes["src"].Value.ToString().EndsWith(".jpg"))
                     {
                         //we get the information and put on a dictionary
                         //we do this way because it is easier to see if you can get aditional info later
-                        HtmlAttribute att = card.Attributes["href"];
-                        String imageJpg = att.Value.Split('/').Last().Replace(".html", ".jpg");
+
+                        HtmlAttribute linkToCard = card.ParentNode.Attributes["href"];
+                        String imageJpg = card.Attributes["src"].Value.Split('/').Last();
                         if (!String.IsNullOrEmpty(imageJpg))
                         {
-                            dct.Add(imageJpg, att.Value);
+                            if (!dct.ContainsKey(imageJpg))
+                            {
+                                dct.Add(imageJpg, linkToCard.Value);
+                            }
                         }
                     }
                 }
