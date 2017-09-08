@@ -87,7 +87,7 @@ namespace MagicBot
             }
             else
             {
-                sb.Append(CardUrl);
+                sb.Append(CardUrl.Replace(".jpg",String.Empty));
                 sb.Append(lineBreak);
             }
 
@@ -135,7 +135,7 @@ namespace MagicBot
             }
             else
             {
-                sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(CardUrl));
+                sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(CardUrl.Replace(".jpg",String.Empty)));
             }
 
             if (!String.IsNullOrEmpty(ManaCost))
@@ -192,7 +192,7 @@ namespace MagicBot
             }
             else
             {
-                sb.Append(CardUrl);
+                sb.Append(CardUrl.Replace(".jpg",String.Empty));
             }
 
             if (!String.IsNullOrEmpty(Type))
