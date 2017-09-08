@@ -19,15 +19,17 @@ namespace MagicBot
         private String _websiteUrl;
         private readonly String _pathGetCards = "APIv2/cards/by/spoils";
         private readonly String _pathImages = "card_images";
+        private Int32 _numberOfTrysBeforeIgnoringWebSite;
         private String _apiKey;
         #endregion
 
         #region Constructors
-        public MythicApiTasker(String apiUrl, String websiteUrl, String apiKey)
+        public MythicApiTasker(String apiUrl, String websiteUrl, String apiKey, Int32 numberOfTrysBeforeIgnoringWebSite)
         {
             _apiUrl = apiUrl;
             _websiteUrl = websiteUrl;
             _apiKey = apiKey;
+            _numberOfTrysBeforeIgnoringWebSite = numberOfTrysBeforeIgnoringWebSite;
         }
         #endregion
 
@@ -71,10 +73,8 @@ namespace MagicBot
                 {
                     SpoilItem spoil = sp;
                     //check if the spoil is in the database
-                    Task<Boolean> taskDb = Database.IsSpoilInDatabase(spoil);
-                    taskDb.Wait();
                     //if is not in the database
-                    if (!taskDb.Result)
+                    if (!Database.IsSpoilInDatabase(spoil, true))
                     {
                         if (dctWebsiteCards.ContainsKey(spoil.CardUrl))
                         {
@@ -82,29 +82,46 @@ namespace MagicBot
                             spoil.FullUrlWebSite = String.Format("{0}/{1}", _websiteUrl, urlCard);
                             spoil = GetAdditionalInfo(spoil);
                         }
-                        else if (dctWebsiteCards.ContainsKey(spoil.CardUrl.Replace("1", String.Empty))) //sometimes the api does weird things and returns a random 1 on the end, just test for it also
+                        else if (dctWebsiteCards.ContainsKey(spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg")) //sometimes the api does weird things and returns a random 1 on the end, just test for it also
                         {
                             String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl.Replace("1", String.Empty));
                             spoil.FullUrlWebSite = String.Format("{0}/{1}", _websiteUrl, urlCard);
                             spoil = GetAdditionalInfo(spoil);
+                        }
+                        else //if it isn't on the site add the counter on the database
+                        {
+                            //if it is below or limit for waiting, we just advance and hope that the next time it is on the website
+                            if (Database.InsertSimpleSpoilAndOrAddCounter(spoil) < _numberOfTrysBeforeIgnoringWebSite)
+                            {
+                                continue;
+                            }
                         }
 
                         //formats the full path of the image
                         String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
                         spoil.ImageUrlWebSite = fullUrlImagePath;
 
-                        //adds in the database
-                        //does it async and doesn't need to wait because we don't need the 
-                        Database.InsertSpoil(spoil).Wait();
-
                         try
                         {
-                            spoil.Image = GetImageFromUrl(fullUrlImagePath);
+                            spoil.Image = GetImageFromUrl(spoil.ImageUrlWebSite);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                            throw new Exception("Error getting the image", ex);
+                            Console.WriteLine(String.Format("Error getting the image for {0}, will try to replace the number at the end", spoil.CardUrl));
+                            spoil.ImageUrlWebSite = spoil.ImageUrlWebSite.Substring(0, spoil.ImageUrlWebSite.Length - 5) + ".jpg";
+                            try
+                            {
+                                spoil.Image = GetImageFromUrl(spoil.ImageUrlWebSite);
+                            }
+                            catch (Exception)
+                            {
+                                Console.WriteLine(String.Format("Could not load image for {0}", spoil.CardUrl));
+                                continue;
+                            }
                         }
+
+                        //adds in the database
+                        Database.InsertOrUpdateSpoil(spoil);
 
                         //fires the event to do stuffs with the new object
                         OnNewItem(spoil);
@@ -181,8 +198,8 @@ namespace MagicBot
                 try
                 {
                     var nodes = html.DocumentNode.SelectNodes("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[7]/td[2]/font[1]");
-                    
-                    foreach(var node in nodes)
+
+                    foreach (var node in nodes)
                     {
                         var powerToughness = node.ChildNodes[2].InnerText.Trim();
                         powerToughness = powerToughness.Replace("\n", String.Empty);
@@ -198,7 +215,7 @@ namespace MagicBot
                         }
                     }
 
-                    
+
                 }
                 catch { }
                 try

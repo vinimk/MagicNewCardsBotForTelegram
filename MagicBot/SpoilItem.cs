@@ -37,7 +37,6 @@ namespace MagicBot
                 }
             }
         }
-
         private Int32 toughness = -1;
         public Int32 Toughness
         {
@@ -55,10 +54,13 @@ namespace MagicBot
         }
         public String ImageUrlWebSite { get; set; }
         public String AdditionalImageUrlWebSite { get; set; }
+        public Boolean IsCardSent { get; set; }
         [NotMapped]
         public Image<Rgba32> Image { get; set; }
         [NotMapped]
         public Image<Rgba32> AdditionalImage { get; set; }
+
+        #region Methods
 
         public override String ToString()
         {
@@ -103,7 +105,11 @@ namespace MagicBot
 
             if (!String.IsNullOrEmpty(Text))
             {
-                sb.AppendFormat("{0}.", Text);
+                sb.Append(Text);
+                if (!sb.ToString().EndsWith("."))
+                {
+                    sb.Append(".");
+                }
                 sb.Append(lineBreak);
             }
 
@@ -151,6 +157,10 @@ namespace MagicBot
             if (!String.IsNullOrEmpty(Text))
             {
                 sb.Append(WebUtility.HtmlEncode(Text));
+                if (!sb.ToString().EndsWith("."))
+                {
+                    sb.Append(".");
+                }
                 sb.Append(lineBreak);
             }
 
@@ -196,5 +206,6 @@ namespace MagicBot
 
             return sb.ToString();
         }
+        #endregion
     }
 }

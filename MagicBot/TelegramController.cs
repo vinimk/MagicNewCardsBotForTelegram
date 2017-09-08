@@ -41,12 +41,6 @@ namespace MagicBot
         #endregion
 
         #region Private Methods
-        private List<Chat> GetChatList()
-        {
-            Task<List<Chat>> taskDb = Database.GetAllChats();
-            taskDb.Wait();
-            return taskDb.Result;
-        }
 
         public void HookUpdateEvent()
         {
@@ -59,7 +53,7 @@ namespace MagicBot
         private void SendImage(SpoilItem spoil)
         {
             //goes trough all the chats and send a message for each one
-            List<Chat> lstChat = GetChatList();
+            List<Chat> lstChat = Database.GetAllChats();
             foreach (Chat chat in lstChat)
             {
                 try
@@ -192,16 +186,12 @@ namespace MagicBot
         private void AddIfNeeded(Chat chat)
         {
             //query the list to see if the chat is already in the database
-            Task<Boolean> taskDb = Database.IsChatInDatabase(chat);
-            taskDb.Wait();
-
-            //if it isn't adds it 
-            if (!taskDb.Result)
+            if (!Database.IsChatInDatabase(chat))
             {
-                Database.InsertChat(chat).Wait();
+                //if it isn't adds it
+                Database.InsertChat(chat);
                 _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable").Wait();
                 Console.WriteLine(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
-                //after adding a item in the database, update the list 
             }
         }
         #endregion

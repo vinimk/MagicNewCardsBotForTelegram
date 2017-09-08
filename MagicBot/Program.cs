@@ -79,7 +79,7 @@ namespace MagicBot
             _timeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
             Database.SetConnectionString(config["ConnectionStringMySQL"]);
 
-            _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"], config["MythicWebsiteUrl"], config["MythicApiKey"]);
+            _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"], config["MythicWebsiteUrl"], config["MythicApiKey"], Int32.Parse(config["NumberOfTrysBeforeIgnoringWebSite"]));
             _mythicApiTasker.New += MythicApiTasker_New;
 
             _telegramController = new TelegramController(config["TelegramBotApiKey"]);
@@ -95,10 +95,28 @@ namespace MagicBot
             if (newItem.Image != null)
             {
                 Console.WriteLine(String.Format("Sending new card {0} from folder {1} to everyone", newItem.CardUrl, newItem.Folder));
-                _telegramController.SendImageToAll(newItem);
+                try
+                {
+                    _telegramController.SendImageToAll(newItem);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.CardUrl));
+                    Console.WriteLine(ex.Message);
+                }
 
                 Console.WriteLine(String.Format("Tweeting new card {0} from folder {1}", newItem.CardUrl, newItem.Folder));
-                _twitterController.PublishNewImage(newItem);
+                try
+                {
+                    _twitterController.PublishNewImage(newItem);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.CardUrl));
+                    Console.WriteLine(ex.Message);
+                }
+
+                Database.UpdateIsSent(newItem, true);
             }
         }
         #endregion
