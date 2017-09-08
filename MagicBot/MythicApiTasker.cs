@@ -98,6 +98,7 @@ namespace MagicBot
                             Int32 numberOfTrys = Database.InsertSimpleSpoilAndOrAddCounter(spoil);
                             if (numberOfTrys < _numberOfTrysBeforeIgnoringWebSite)
                             {
+                                Console.WriteLine(String.Format("{0} doesn't have enough information, tryed {1} times", spoil.CardUrl, numberOfTrys));
                                 continue;
                             }
                         }
