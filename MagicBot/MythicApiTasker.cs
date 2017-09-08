@@ -102,8 +102,6 @@ namespace MagicBot
                             }
                         }
 
-
-
                         //formats the full path of the image
                         String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
                         spoil.ImageUrlWebSite = fullUrlImagePath;
@@ -196,11 +194,11 @@ namespace MagicBot
                         txt = txt.Replace(@"<!--CARD TEXT-->", String.Empty);
                         sb.Append(txt.Trim());
                     }
-                    spoil.Text = sb.ToString();
+                    spoil.Text = System.Net.WebUtility.HtmlDecode(sb.ToString());
                 }
                 catch { }
-                try { spoil.Flavor = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[5]/td[1]/i[1]").LastChild.InnerText.Trim(); } catch { }
-                try { spoil.Illustrator = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[7]/td[1]/font[1]").LastChild.InnerText.Trim(); } catch { }
+                try { spoil.Flavor = System.Net.WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[5]/td[1]/i[1]").LastChild.InnerText.Trim()); } catch { }
+                try { spoil.Illustrator = System.Net.WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[7]/td[1]/font[1]").LastChild.InnerText.Trim()); } catch { }
 
                 try
                 {
