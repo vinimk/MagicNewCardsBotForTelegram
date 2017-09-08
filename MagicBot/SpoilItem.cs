@@ -201,6 +201,8 @@ namespace MagicBot
                 sb.Append(Type);
             }
 
+            sb.Append(" #MTG");
+
             sb.Append(lineBreak);
             sb.Append(FullUrlWebSite);
 
