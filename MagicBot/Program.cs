@@ -26,13 +26,13 @@ namespace MagicBot
                 Init();
 
                 //first we update the list of chats
-                Console.WriteLine("Updating telegram chat list");
+                Program.WriteLine("Updating telegram chat list");
                 _telegramController.InitialUpdate();
                 _telegramController.HookUpdateEvent();
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Program.WriteLine(ex.ToString());
             }
 
             //the software will always be on a while true loop
@@ -42,20 +42,18 @@ namespace MagicBot
                 {
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
-                    Console.WriteLine("Getting new cards");
+                    Program.WriteLine("Getting new cards");
                     _mythicApiTasker.GetNewCards();
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
-                    Console.WriteLine(String.Format("Going to sleep for {0} ms", _timeInternalMS));
-                    Task.WaitAll();
+                    Program.WriteLine(String.Format("Going to sleep for {0} ms. I might still be doing work on the background", _timeInternalMS));
                     Thread.Sleep(_timeInternalMS);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    Program.WriteLine(ex.ToString());
                 }
             }
-
         }
 
         #region Definitions
@@ -68,7 +66,7 @@ namespace MagicBot
         #region Init configs
         private static void Init()
         {
-            Console.WriteLine("Initializing");
+            Program.WriteLine("Initializing");
 
             var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -94,31 +92,36 @@ namespace MagicBot
         {
             if (newItem.Image != null)
             {
-                Console.WriteLine(String.Format("Sending new card {0} from folder {1} to everyone", newItem.CardUrl, newItem.Folder));
+                Program.WriteLine(String.Format("Sending new card {0} from folder {1} to everyone", newItem.CardUrl, newItem.Folder));
                 try
                 {
                     Task.Run(() => _telegramController.SendImageToAll(newItem));
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.CardUrl));
-                    Console.WriteLine(ex.Message);
+                    Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.CardUrl));
+                    Program.WriteLine(ex.Message);
                 }
 
-                Console.WriteLine(String.Format("Tweeting new card {0} from folder {1}", newItem.CardUrl, newItem.Folder));
+                Program.WriteLine(String.Format("Tweeting new card {0} from folder {1}", newItem.CardUrl, newItem.Folder));
                 try
                 {
-                    _twitterController.PublishNewImage(newItem);
+                    Task.Run(() =>_twitterController.PublishNewImage(newItem));
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.CardUrl));
-                    Console.WriteLine(ex.Message);
+                    Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.CardUrl));
+                    Program.WriteLine(ex.Message);
                 }
 
                 Database.UpdateIsSent(newItem, true);
             }
         }
         #endregion
+
+        public static void WriteLine(String message)
+        {
+            Console.WriteLine(String.Format("{0}-{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), message));
+        }
     }
 }

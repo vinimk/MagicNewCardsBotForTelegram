@@ -73,67 +73,73 @@ namespace MagicBot
 
                 foreach (SpoilItem sp in response.Items)
                 {
-                    SpoilItem spoil = sp;
-                    //check if the spoil is in the database
-                    //if is not in the database AND has NOT been sent
-                    if (!Database.IsSpoilInDatabase(spoil, true))
-                    {
-                        if (dctWebsiteCards.ContainsKey(spoil.CardUrl))
-                        {
-                            String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl);
-                            spoil.FullUrlWebSite = String.Format("{0}{1}", _websiteUrl, urlCard);
-                            spoil = GetAdditionalInfo(spoil);
-                        }
-                        else if (dctWebsiteCards.ContainsKey(spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg")) //sometimes the api does weird things and returns a random 1 on the end, just test for it also
-                        {
-                            String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl.Replace("1", String.Empty));
-                            spoil.FullUrlWebSite = String.Format("{0}{1}", _websiteUrl, urlCard);
-                            spoil = GetAdditionalInfo(spoil);
-                        }
-
-                        //if the spoil doesn't have any extra info, it will add to the database but it will not send it out yet
-                        if (!spoil.HasAnyExtraInfo())
-                        {
-                            //if it is below or limit for waiting, we just advance and hope that the next time it is on the website
-                            Int32 numberOfTrys = Database.InsertSimpleSpoilAndOrAddCounter(spoil);
-                            if (numberOfTrys < _numberOfTrysBeforeIgnoringWebSite)
-                            {
-                                Console.WriteLine(String.Format("{0} doesn't have enough information, tryed {1} times", spoil.CardUrl, numberOfTrys));
-                                continue;
-                            }
-                        }
-
-                        //formats the full path of the image
-                        String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
-                        spoil.ImageUrlWebSite = fullUrlImagePath;
-
-                        try
-                        {
-                            spoil.Image = GetImageFromUrl(spoil.ImageUrlWebSite);
-                        }
-                        catch (Exception)
-                        {
-                            Console.WriteLine(String.Format("Error getting the image for {0}, will try to replace the number at the end", spoil.CardUrl));
-                            spoil.ImageUrlWebSite = spoil.ImageUrlWebSite.Substring(0, spoil.ImageUrlWebSite.Length - 5) + ".jpg";
-                            try
-                            {
-                                spoil.Image = GetImageFromUrl(spoil.ImageUrlWebSite);
-                            }
-                            catch (Exception)
-                            {
-                                Console.WriteLine(String.Format("Could not load image for {0}", spoil.CardUrl));
-                                continue;
-                            }
-                        }
-
-                        //adds in the database
-                        Database.InsertOrUpdateSpoil(spoil);
-
-                        //fires the event to do stuffs with the new object
-                        OnNewItem(spoil);
-                    }
-
+                    CheckCard(sp, dctWebsiteCards);
                 }
+
+            }
+        }
+
+
+        private void CheckCard(SpoilItem sp, Dictionary<String, String> dctWebsiteCards)
+        {
+            SpoilItem spoil = sp;
+            //check if the spoil is in the database
+            //if is not in the database AND has NOT been sent
+            if (!Database.IsSpoilInDatabase(spoil, true))
+            {
+                if (dctWebsiteCards.ContainsKey(spoil.CardUrl))
+                {
+                    String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl);
+                    spoil.FullUrlWebSite = String.Format("{0}{1}", _websiteUrl, urlCard);
+                    spoil = GetAdditionalInfo(spoil);
+                }
+                else if (dctWebsiteCards.ContainsKey(spoil.CardUrl.Substring(0, spoil.CardUrl.Length - 5) + ".jpg")) //sometimes the api does weird things and returns a random 1 on the end, just test for it also
+                {
+                    String urlCard = dctWebsiteCards.GetValueOrDefault(spoil.CardUrl.Replace("1", String.Empty));
+                    spoil.FullUrlWebSite = String.Format("{0}{1}", _websiteUrl, urlCard);
+                    spoil = GetAdditionalInfo(spoil);
+                }
+
+                //if the spoil doesn't have any extra info, it will add to the database but it will not send it out yet
+                if (!spoil.HasAnyExtraInfo())
+                {
+                    //if it is below or limit for waiting, we just advance and hope that the next time it is on the website
+                    Int32 numberOfTrys = Database.InsertSimpleSpoilAndOrAddCounter(spoil);
+                    if (numberOfTrys < _numberOfTrysBeforeIgnoringWebSite)
+                    {
+                        Program.WriteLine(String.Format("{0} doesn't have enough information, tryed {1} times", spoil.CardUrl, numberOfTrys));
+                        return;
+                    }
+                }
+
+                //formats the full path of the image
+                String fullUrlImagePath = String.Format("{0}/{1}/{2}/{3}", _apiUrl, _pathImages, spoil.Folder, spoil.CardUrl);
+                spoil.ImageUrlWebSite = fullUrlImagePath;
+
+                try
+                {
+                    spoil.Image = GetImageFromUrl(spoil.ImageUrlWebSite);
+                }
+                catch (Exception)
+                {
+                    Program.WriteLine(String.Format("Error getting the image for {0}, will try to replace the number at the end", spoil.CardUrl));
+                    spoil.ImageUrlWebSite = spoil.ImageUrlWebSite.Substring(0, spoil.ImageUrlWebSite.Length - 5) + ".jpg";
+                    try
+                    {
+                        spoil.Image = GetImageFromUrl(spoil.ImageUrlWebSite);
+                    }
+                    catch (Exception)
+                    {
+                        Program.WriteLine(String.Format("Could not load image for {0}", spoil.CardUrl));
+                        return;
+                    }
+                }
+
+                //adds in the database
+                Database.InsertOrUpdateSpoil(spoil);
+
+                //fires the event to do stuffs with the new object
+                OnNewItem(spoil);
             }
         }
 
@@ -283,9 +289,9 @@ namespace MagicBot
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error crawling the main page ");
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(ex.StackTrace);
+                Program.WriteLine("Error crawling the main page ");
+                Program.WriteLine(ex.Message);
+                Program.WriteLine(ex.StackTrace);
             }
             return dct;
         }

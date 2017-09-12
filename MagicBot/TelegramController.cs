@@ -36,22 +36,6 @@ namespace MagicBot
 
         public void SendImageToAll(SpoilItem spoil)
         {
-            SendImage(spoil);
-        }
-        #endregion
-
-        #region Private Methods
-
-        public void HookUpdateEvent()
-        {
-            //removes then adds the handler, that way it make sure that the event is handled
-            _botClient.OnUpdate -= botClientOnUpdate;
-            _botClient.OnUpdate += botClientOnUpdate;
-            _botClient.StartReceiving();
-        }
-
-        private void SendImage(SpoilItem spoil)
-        {
             //goes trough all the chats and send a message for each one
             List<Chat> lstChat = Database.GetAllChats();
             // List<Chat> lstChat = new List<Chat>(){
@@ -62,88 +46,112 @@ namespace MagicBot
             // };
             foreach (Chat chat in lstChat)
             {
-                try
-                {
-                    Message replyToMessage;
-                    String messageText;
-                    //if the text is to big, we need to send it as a message afterwards
-                    Boolean isTextToBig = spoil.GetTelegramText().Length >= 200;
+                Task.Run(() => SendSpoilToChat(spoil,chat));
+            }
+        }
 
-                    //gets a temp file for the image
-                    String pathTempImage = System.IO.Path.GetTempFileName();
+
+        public void HookUpdateEvent()
+        {
+            //removes then adds the handler, that way it make sure that the event is handled
+            _botClient.OnUpdate -= botClientOnUpdate;
+            _botClient.OnUpdate += botClientOnUpdate;
+            _botClient.StartReceiving();
+        }
+
+
+        #endregion
+
+        #region Private Methods
+
+        private void SendSpoilToChat(SpoilItem spoil, Chat chat)
+        {
+            try
+            {
+                Message replyToMessage;
+                String messageText;
+                //if the text is to big, we need to send it as a message afterwards
+                Boolean isTextToBig = spoil.GetTelegramText().Length >= 200;
+
+                //gets a temp file for the image
+                String pathTempImage = System.IO.Path.GetTempFileName();
+                //saves the image in the disk in the temp file
+                FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
+                spoil.Image.Save(fileStream, ImageSharp.ImageFormats.Png);
+                fileStream.Flush();
+                fileStream.Close();
+
+                //loads the image and sends it
+                using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
+                {
+                    if (isTextToBig)
+                    {
+                        messageText = String.Empty;
+                    }
+                    else
+                    {
+                        messageText = spoil.GetTelegramText();
+                    }
+
+                    FileToSend fts = new FileToSend();
+                    fts.Content = stream;
+                    fts.Filename = pathTempImage.Split('\\').Last();
+                    Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText);
+                    task.Wait();
+                    //stores this if we need to send another message
+                    replyToMessage = task.Result;
+                }
+
+                //if there is a additional image, we send it as a reply
+                if (spoil.AdditionalImage != null)
+                {
+                    String pathTempImageAdditional = System.IO.Path.GetTempFileName();
                     //saves the image in the disk in the temp file
-                    FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
-                    spoil.Image.Save(fileStream, ImageSharp.ImageFormats.Png);
-                    fileStream.Flush();
-                    fileStream.Close();
+                    FileStream fileStreamAdditional = new FileStream(pathTempImageAdditional, FileMode.OpenOrCreate);
+                    spoil.AdditionalImage.Save(fileStreamAdditional, ImageSharp.ImageFormats.Png);
+                    fileStreamAdditional.Flush();
+                    fileStreamAdditional.Close();
 
                     //loads the image and sends it
-                    using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
+                    using (var stream = System.IO.File.Open(pathTempImageAdditional, FileMode.Open))
                     {
-                        if (isTextToBig)
-                        {
-                            messageText = String.Empty;
-                        }
-                        else
-                        {
-                            messageText = spoil.GetTelegramText();
-                        }
-
                         FileToSend fts = new FileToSend();
                         fts.Content = stream;
-                        fts.Filename = pathTempImage.Split('\\').Last();
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText);
+                        fts.Filename = pathTempImageAdditional.Split('\\').Last();
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText, false, replyToMessage.MessageId);
                         task.Wait();
                         //stores this if we need to send another message
                         replyToMessage = task.Result;
                     }
-
-                    //if there is a additional image, we send it as a reply
-                    if (spoil.AdditionalImage != null)
-                    {
-                        String pathTempImageAdditional = System.IO.Path.GetTempFileName();
-                        //saves the image in the disk in the temp file
-                        FileStream fileStreamAdditional = new FileStream(pathTempImageAdditional, FileMode.OpenOrCreate);
-                        spoil.AdditionalImage.Save(fileStreamAdditional, ImageSharp.ImageFormats.Png);
-                        fileStreamAdditional.Flush();
-                        fileStreamAdditional.Close();
-
-                        //loads the image and sends it
-                        using (var stream = System.IO.File.Open(pathTempImageAdditional, FileMode.Open))
-                        {
-                            FileToSend fts = new FileToSend();
-                            fts.Content = stream;
-                            fts.Filename = pathTempImageAdditional.Split('\\').Last();
-                            Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText, false, replyToMessage.MessageId);
-                            task.Wait();
-                            //stores this if we need to send another message
-                            replyToMessage = task.Result;
-                        }
-                    }
-
-                    if (isTextToBig)
-                    {
-                        _botClient.SendTextMessageAsync(chat, spoil.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
-                    }
-
                 }
-                catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
+
+                if (isTextToBig)
                 {
-                    if (ex.Message.Contains("bot was kicked"))
-                    {
-                        Console.WriteLine(String.Format("Bot was kicked from group {0}, consider deletting him from the database on table Chats", chat.Title));
-                        continue;
-                    }
-                    if (ex.Message.Contains("bot was blocked by the user"))
-                    {
-                        Console.WriteLine(String.Format("Bot was blocked by user {0}, consider deletting him from the database on table Chats", chat.FirstName));
-                        continue;
-                    }
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine(ex.StackTrace);
+                    _botClient.SendTextMessageAsync(chat, spoil.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
+                }
+
+            }
+            catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
+            {
+                if (ex.Message.Contains("bot was kicked"))
+                {
+                    Program.WriteLine(String.Format("Bot was kicked from group {0}, consider deletting him from the database on table Chats", chat.Title));
+                    return;
+                }
+                else if (ex.Message.Contains("bot was blocked by the user"))
+                {
+                    Program.WriteLine(String.Format("Bot was blocked by user {0}, consider deletting him from the database on table Chats", chat.FirstName));
+                    return;
+                }
+                else
+                {
+                    Program.WriteLine(ex.Message);
+                    Program.WriteLine(ex.StackTrace);
                 }
             }
         }
+
+
 
         private void GetInitialUpdateEvents()
         {
@@ -197,7 +205,7 @@ namespace MagicBot
                 //if it isn't adds it
                 Database.InsertChat(chat);
                 _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable").Wait();
-                Console.WriteLine(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
+                Program.WriteLine(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
             }
         }
         #endregion
@@ -210,7 +218,7 @@ namespace MagicBot
                 args.Update.Message != null &&
                 args.Update.Message.Chat != null)
             {
-                Console.WriteLine(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
+                Program.WriteLine(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
                 AddIfNeeded(args.Update.Message.Chat);
                 _offset = args.Update.Id;
             }
