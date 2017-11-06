@@ -240,7 +240,7 @@ namespace MagicBot
             {
                 return true;
             }
-            if (!String.IsNullOrEmpty(AdditionalImageUrlWebSite))
+            if (AdditionalImage != null)
             {
                 return true;
             }

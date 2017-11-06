@@ -107,7 +107,7 @@ namespace MagicBot
                     Int32 numberOfTrys = Database.InsertSimpleSpoilAndOrAddCounter(spoil);
                     if (numberOfTrys < _numberOfTrysBeforeIgnoringWebSite)
                     {
-                        Program.WriteLine(String.Format("{0} doesn't have enough information, tryed {1} times", spoil.CardUrl, numberOfTrys));
+                        Program.WriteLine(String.Format("{0} doesn't have enough information, tried {1} times", spoil.CardUrl, numberOfTrys));
                         return;
                     }
                 }
@@ -232,9 +232,12 @@ namespace MagicBot
                 catch { }
                 try
                 {
-                    HtmlNode node = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[1]/img[1]");
-                    if (node != null)
+                    //as they layout always changes and we don't know for sure which one will work, we try different ways to get the images
+                    try
                     {
+                        HtmlNode node = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[1]/img[1]");
+
+
                         String outerHtml = node.OuterHtml;
                         String[] tmp = outerHtml.Split("\"");
                         String jpg = tmp[1];
@@ -245,6 +248,54 @@ namespace MagicBot
                             spoil.AdditionalImageUrlWebSite = fullUrlAdditional;
                             spoil.AdditionalImage = GetImageFromUrl(fullUrlAdditional);
                         }
+                    }
+                    catch { }
+
+                    if (spoil.AdditionalImage == null)
+                    {
+                        try
+                        {
+                            HtmlNodeCollection nodes = html.DocumentNode.SelectNodes("/html/body/center/table[5]/tr[1]/td[1]/img");
+                            foreach (HtmlNode htmlNode in nodes)
+                            {
+                                String img = htmlNode.Attributes["src"].Value.ToString();
+                                String urlSite = spoil.FullUrlWebSite.Substring(0, spoil.FullUrlWebSite.LastIndexOf('/'));
+                                if (img != spoil.CardUrl &&
+                                        !(spoil.CardUrl.StartsWith(img.Replace(".jpg", String.Empty)) ||
+                                        img.StartsWith(spoil.CardUrl.Replace(".jpg", String.Empty)))
+                                    ) // this if checks for promo so the script doesnt get the same image but for a promo as a additional one)
+                                {
+                                    String fullUrlAdditional = String.Format("{0}/{1}", urlSite, img);
+                                    spoil.AdditionalImageUrlWebSite = fullUrlAdditional;
+                                    spoil.AdditionalImage = GetImageFromUrl(fullUrlAdditional);
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+
+                    
+                    if (spoil.AdditionalImage == null)
+                    {
+                        try
+                        {
+                            HtmlNodeCollection nodes = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[1]/nobr[1]").SelectNodes("img");
+                            foreach (HtmlNode htmlNode in nodes)
+                            {
+                                String img = htmlNode.Attributes["src"].Value.ToString();
+                                String urlSite = spoil.FullUrlWebSite.Substring(0, spoil.FullUrlWebSite.LastIndexOf('/'));
+                                if (img != spoil.CardUrl &&
+                                        !(spoil.CardUrl.StartsWith(img.Replace(".jpg", String.Empty)) ||
+                                        img.StartsWith(spoil.CardUrl.Replace(".jpg", String.Empty)))
+                                    ) // this if checks for promo so the script doesnt get the same image but for a promo as a additional one)
+                                {
+                                    String fullUrlAdditional = String.Format("{0}/{1}", urlSite, img);
+                                    spoil.AdditionalImageUrlWebSite = fullUrlAdditional;
+                                    spoil.AdditionalImage = GetImageFromUrl(fullUrlAdditional);
+                                }
+                            }
+                        }
+                        catch { }
                     }
 
                 }
