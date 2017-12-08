@@ -5,17 +5,17 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="appsettings.json" CopyToPublishDirectory="Always" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.5.1" />
-    <PackageReference Include="ImageSharp" Version="1.0.0-alpha9-00194" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.6.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
-    <PackageReference Include="MySqlConnector" Version="0.26.1" />
+    <PackageReference Include="MySqlConnector" Version="0.33.1" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="Telegram.Bot" Version="13.1.0" />
-    <PackageReference Include="TweetinviAPI" Version="2.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0002" />
+    <PackageReference Include="Telegram.Bot" Version="13.4.0" />
+    <PackageReference Include="TweetinviAPI" Version="2.1.0" />
   </ItemGroup>
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JSONSchema="" /></VisualStudio></ProjectExtensions>
 </Project>

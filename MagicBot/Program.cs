@@ -10,7 +10,7 @@ using Telegram.Bot.Types.InputMessageContents;
 using Telegram.Bot.Types;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-using ImageSharp;
+using SixLabors.ImageSharp;
 using System.Collections.Generic;
 
 namespace MagicBot

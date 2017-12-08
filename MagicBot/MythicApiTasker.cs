@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
 using Newtonsoft.Json;
-using ImageSharp;
+using SixLabors.ImageSharp;
 using System.Net;
 using System.IO;
 using HtmlAgilityPack;

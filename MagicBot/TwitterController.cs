@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tweetinvi;
-using ImageSharp;
+using SixLabors.ImageSharp;
 using System.IO;
 using System.Linq;
 using Tweetinvi.Models;
@@ -39,7 +39,7 @@ namespace MagicBot
             String pathTempImage = System.IO.Path.GetTempFileName();
             //saves the image in the disk in the temp file
             FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
-            spoil.Image.Save(fileStream, ImageSharp.ImageFormats.Png);
+            spoil.Image.Save(fileStream, ImageFormats.Png);
             fileStream.Flush();
             fileStream.Close();
 
@@ -54,7 +54,7 @@ namespace MagicBot
                 String pathTempImageAdditional = System.IO.Path.GetTempFileName();
                 //saves the image in the disk in the temp file
                 FileStream fileStreamAdditional = new FileStream(pathTempImageAdditional, FileMode.OpenOrCreate);
-                spoil.AdditionalImage.Save(fileStreamAdditional, ImageSharp.ImageFormats.Png);
+                spoil.AdditionalImage.Save(fileStreamAdditional, ImageFormats.Png);
                 fileStreamAdditional.Flush();
                 fileStreamAdditional.Close();
 
