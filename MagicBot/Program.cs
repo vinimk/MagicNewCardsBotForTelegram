@@ -10,8 +10,8 @@ using Telegram.Bot.Types.InputMessageContents;
 using Telegram.Bot.Types;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-using SixLabors.ImageSharp;
 using System.Collections.Generic;
+using System.Net;
 
 namespace MagicBot
 {
@@ -24,7 +24,7 @@ namespace MagicBot
             {
                 //first initialize our internals
                 Init();
-
+               
                 //first we update the list of chats
                 Program.WriteLine("Updating telegram chat list");
                 _telegramController.InitialUpdate();
@@ -32,6 +32,7 @@ namespace MagicBot
             }
             catch (Exception ex)
             {
+                Database.InsertLog("Updating telegram chat list", String.Empty, ex.ToString());
                 Program.WriteLine(ex.ToString());
             }
 
@@ -43,21 +44,22 @@ namespace MagicBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Program.WriteLine("Getting new cards");
-                    _mythicApiTasker.GetNewCards();
+                    _scryfallApiTasker.GetNewCards();
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
-                    Program.WriteLine(String.Format("Going to sleep for {0} ms. I might still be doing work on the background", _timeInternalMS));
+                    Program.WriteLine(String.Format("Going to sleep for {0} ms.", _timeInternalMS));
                     Thread.Sleep(_timeInternalMS);
                 }
                 catch (Exception ex)
                 {
+                    Database.InsertLog("Getting new cards", String.Empty, ex.ToString());
                     Program.WriteLine(ex.ToString());
                 }
             }
         }
 
         #region Definitions
-        private static MythicApiTasker _mythicApiTasker;
+        private static ScryfallApiTasker _scryfallApiTasker;
         private static TelegramController _telegramController;
         private static TwitterController _twitterController;
         private static int _timeInternalMS;
@@ -75,53 +77,86 @@ namespace MagicBot
             var config = builder.Build();
 
             _timeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
-            Database.SetConnectionString(config["ConnectionStringMySQL"]);
 
-            _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"], config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"], config["MythicApiKey"], Int32.Parse(config["NumberOfTrysBeforeIgnoringWebSite"]));
-            _mythicApiTasker.New += MythicApiTasker_New;
+            Database.SetConnectionString(config["ConnectionStringMySQL"]);
+            
+            _scryfallApiTasker = new ScryfallApiTasker();
+            _scryfallApiTasker.eventNewcard += _scryfallApiTasker_eventNewcard;
 
             _telegramController = new TelegramController(config["TelegramBotApiKey"]);
 
             _twitterController = new TwitterController(config["TwitterConsumerKey"], config["TwitterConsumerSecret"], config["TwitterAcessToken"], config["TwitterAcessTokenSecret"]);
 
         }
+
         #endregion
 
         #region Events Handlers
-        private static void MythicApiTasker_New(object sender, SpoilItem newItem)
+
+        private static void _scryfallApiTasker_eventNewcard(object sender, ScryfallCard newItem)
         {
-            if (newItem.Image != null)
+            if (newItem.image_url != null)
             {
-                Program.WriteLine(String.Format("Sending new card {0} from folder {1} to everyone", newItem.CardUrl, newItem.Folder));
+                Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.name));
                 try
                 {
-                    Task.Run(() => _telegramController.SendImageToAll(newItem));
+                    _telegramController.SendImageToAll(newItem);
                 }
                 catch (Exception ex)
                 {
-                    Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.CardUrl));
+                    Database.InsertLog("Telegram send images to all", newItem.name, ex.ToString());
+                    Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.name));
                     Program.WriteLine(ex.Message);
                 }
 
-                Program.WriteLine(String.Format("Tweeting new card {0} from folder {1}", newItem.CardUrl, newItem.Folder));
+                Program.WriteLine(String.Format("Tweeting new card {0}", newItem.name));
                 try
                 {
-                    Task.Run(() =>_twitterController.PublishNewImage(newItem));
+                    _twitterController.PublishNewImage(newItem);
+                    Database.UpdateIsSent(newItem, true);
                 }
                 catch (Exception ex)
                 {
-                    Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.CardUrl));
+                    Database.InsertLog("Twitter send image", newItem.name, ex.ToString());
+                    Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.name));
                     Program.WriteLine(ex.Message);
                 }
-
-                Database.UpdateIsSent(newItem, true);
             }
         }
         #endregion
+
+        #region Helper Functions
+        public static Stream GetImageFromUrl(String url)
+        {
+            //do a webrequest to get the image
+            HttpWebRequest imageRequest = (HttpWebRequest)WebRequest.Create(url);
+            HttpWebResponse imageResponse = (HttpWebResponse)imageRequest.GetResponse();
+            Stream imageStream = imageResponse.GetResponseStream();
+
+            return imageStream;
+        }
+
+        public static byte[] ReadFully(Stream input)
+        {
+            byte[] buffer = new byte[16 * 1024];
+            using (MemoryStream ms = new MemoryStream())
+            {
+                int read;
+                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    ms.Write(buffer, 0, read);
+                }
+                return ms.ToArray();
+            }
+        }
+
 
         public static void WriteLine(String message)
         {
             Console.WriteLine(String.Format("{0}-{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), message));
         }
+        #endregion
+
     }
+
 }
