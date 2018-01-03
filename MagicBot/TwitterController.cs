@@ -33,6 +33,7 @@ namespace MagicBot
         #region Public Methods
         public void PublishNewImage(SpoilItem spoil)
         {
+
             List<IMedia> lstImages = new List<IMedia>();
 
             //gets a temp file for the image
@@ -68,9 +69,8 @@ namespace MagicBot
             {
                 Medias = lstImages
             });
-
         }
-        #endregion
-
     }
+    #endregion
+
 }

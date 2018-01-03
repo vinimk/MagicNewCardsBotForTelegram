@@ -12,11 +12,27 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using SixLabors.ImageSharp;
 using System.Collections.Generic;
+using System.Net;
 
 namespace MagicBot
 {
     public class Program
     {
+        public static Image<Rgba32> GetImageFromUrl(String url)
+        {
+            //do a webrequest to get the image
+            HttpWebRequest imageRequest = (HttpWebRequest)WebRequest.Create(url);
+            HttpWebResponse imageResponse = (HttpWebResponse)imageRequest.GetResponse();
+            Stream imageStream = imageResponse.GetResponseStream();
+
+            //loads the stream into an image object
+            Image<Rgba32> retImage = Image.Load<Rgba32>(imageStream);
+
+            //closes the webresponse and the stream
+            imageStream.Close();
+            imageResponse.Close();
+            return retImage;
+        }
         static void Main(string[] args)
         {
 
@@ -25,6 +41,7 @@ namespace MagicBot
                 //first initialize our internals
                 Init();
 
+                _scryfallApiTasker.GetNewCards();
                 //first we update the list of chats
                 Program.WriteLine("Updating telegram chat list");
                 _telegramController.InitialUpdate();
@@ -32,6 +49,7 @@ namespace MagicBot
             }
             catch (Exception ex)
             {
+                Database.InsertLog("Updating telegram chat list", String.Empty, ex.ToString());
                 Program.WriteLine(ex.ToString());
             }
 
@@ -51,6 +69,7 @@ namespace MagicBot
                 }
                 catch (Exception ex)
                 {
+                    Database.InsertLog("Getting new cards", String.Empty, ex.ToString());
                     Program.WriteLine(ex.ToString());
                 }
             }
@@ -58,6 +77,7 @@ namespace MagicBot
 
         #region Definitions
         private static MythicApiTasker _mythicApiTasker;
+        private static ScryfallApiTasker _scryfallApiTasker;
         private static TelegramController _telegramController;
         private static TwitterController _twitterController;
         private static int _timeInternalMS;
@@ -76,9 +96,11 @@ namespace MagicBot
 
             _timeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
             Database.SetConnectionString(config["ConnectionStringMySQL"]);
-
-            _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"], config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"], config["MythicApiKey"], Int32.Parse(config["NumberOfTrysBeforeIgnoringWebSite"]));
-            _mythicApiTasker.New += MythicApiTasker_New;
+            
+            _scryfallApiTasker = new ScryfallApiTasker();
+            
+            // _mythicApiTasker = new MythicApiTasker(config["MythicApiUrl"], config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"], config["MythicApiKey"], Int32.Parse(config["NumberOfTrysBeforeIgnoringWebSite"]));
+            // _mythicApiTasker.New += MythicApiTasker_New;
 
             _telegramController = new TelegramController(config["TelegramBotApiKey"]);
 
@@ -95,10 +117,11 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Sending new card {0} from folder {1} to everyone", newItem.CardUrl, newItem.Folder));
                 try
                 {
-                    Task.Run(() => _telegramController.SendImageToAll(newItem));
+                    _telegramController.SendImageToAll(newItem);
                 }
                 catch (Exception ex)
                 {
+                    Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
                     Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.CardUrl));
                     Program.WriteLine(ex.Message);
                 }
@@ -106,15 +129,17 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Tweeting new card {0} from folder {1}", newItem.CardUrl, newItem.Folder));
                 try
                 {
-                    Task.Run(() =>_twitterController.PublishNewImage(newItem));
+                    //_twitterController.PublishNewImage(newItem);
+                    Database.UpdateIsSent(newItem, true);
                 }
                 catch (Exception ex)
                 {
+                    Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
                     Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.CardUrl));
                     Program.WriteLine(ex.Message);
                 }
 
-                Database.UpdateIsSent(newItem, true);
+
             }
         }
         #endregion

@@ -175,6 +175,7 @@ namespace MagicBot
             }
             catch (Exception ex)
             {
+                Database.InsertLog("MythicAPiProblem", String.Empty, ex.ToString());
                 throw new Exception("API Problem", ex);
             }
         }
@@ -274,7 +275,7 @@ namespace MagicBot
                         catch { }
                     }
 
-                    
+
                     if (spoil.AdditionalImage == null)
                     {
                         try
@@ -340,7 +341,8 @@ namespace MagicBot
             }
             catch (Exception ex)
             {
-                Program.WriteLine("Error crawling the main page ");
+                Database.InsertLog("Error crawling the main page", String.Empty, ex.ToString());
+                Program.WriteLine("Error crawling the main page");
                 Program.WriteLine(ex.Message);
                 Program.WriteLine(ex.StackTrace);
             }

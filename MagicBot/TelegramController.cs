@@ -46,7 +46,7 @@ namespace MagicBot
             // };
             foreach (Chat chat in lstChat)
             {
-                Task.Run(() => SendSpoilToChat(spoil,chat));
+                SendSpoilToChat(spoil, chat);
             }
         }
 
@@ -145,6 +145,7 @@ namespace MagicBot
                 }
                 else
                 {
+                    Database.InsertLog("Telegram send message", spoil.Name, ex.ToString());
                     Program.WriteLine(ex.Message);
                     Program.WriteLine(ex.StackTrace);
                 }
