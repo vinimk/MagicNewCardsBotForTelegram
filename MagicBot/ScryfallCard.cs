@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using System.IO;
-using SixLabors.ImageSharp;
 using System.Net;
 using Newtonsoft.Json.Linq;
 
@@ -35,201 +34,145 @@ namespace MagicBot
         public JToken card_faces { get; set; }
 
         [NotMapped]
-        public ScryfallCard SecondSide{ get; set;}
+        public List<ScryfallCard> ExtraSides{ get; set; }
 
         [NotMapped]
         public Boolean IsCardSent { get; set; }
+
         [NotMapped]
-        public Image<Rgba32> Image { get; set; }
-        [NotMapped]
+        public string image_url { get; set; }
+
         #region Methods
 
-        // public override String ToString()
-        // {
-        //     //if it doesn't have name, returns the cardUrl
-        //     if (String.IsNullOrEmpty(Name))
-        //     {
-        //         return CardUrl;
-        //     }
-        //     else
-        //     {
-        //         return Name;
-        //     }
-        // }
+        public override String ToString()
+        {
+            return name;
+        }
 
-        // public String GetTelegramText()
-        // {
-        //     String lineBreak = " ";
-        //     StringBuilder sb = new StringBuilder();
+        public String GetTelegramText()
+        {
+            String lineBreak = " ";
+            StringBuilder sb = new StringBuilder();
 
-        //     if (!String.IsNullOrEmpty(Name))
-        //     {
-        //         sb.Append(Name);
-        //         sb.Append(lineBreak);
-        //     }
-        //     else
-        //     {
-        //         sb.Append(CardUrl.Replace(".jpg",String.Empty));
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(name))
+            {
+                sb.Append(name);
+                sb.Append(lineBreak);
+            }
 
-        //     if (!String.IsNullOrEmpty(ManaCost))
-        //     {
-        //         sb.AppendFormat("|{0}|", ManaCost);
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(mana_cost))
+            {
+                sb.AppendFormat("|{0}|", mana_cost);
+                sb.Append(lineBreak);
+            }
 
-        //     if (!String.IsNullOrEmpty(Type))
-        //     {
-        //         sb.AppendFormat("{0}.", Type);
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(type_line))
+            {
+                sb.AppendFormat("{0}.", type_line);
+                sb.Append(lineBreak);
+            }
 
-        //     if (!String.IsNullOrEmpty(Text))
-        //     {
-        //         sb.Append(Text);
-        //         if (!sb.ToString().EndsWith("."))
-        //         {
-        //             sb.Append(".");
-        //         }
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(oracle_text))
+            {
+                sb.Append(oracle_text);
+                if (!sb.ToString().EndsWith("."))
+                {
+                    sb.Append(".");
+                }
+                sb.Append(lineBreak);
+            }
 
-        //     if (Power >= 0 || Toughness >= 0)
-        //     {
-        //         sb.AppendFormat(" ({0}/{1})", Power, Toughness);
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(power) || (!String.IsNullOrEmpty(toughness)))
+            {
+                sb.AppendFormat(" ({0}/{1})", power, toughness);
+                sb.Append(lineBreak);
+            }
 
-        //     sb.Append(FullUrlWebSite);
+            sb.Append(scryfall_uri);
 
-        //     return sb.ToString().Replace("\n", " ").Replace("  ", " "); //this is a linebreak for telegram API
-        // }
+            return sb.ToString().Replace("\n", " ").Replace("  ", " "); //this is a linebreak for telegram API
+        }
 
-        // public String GetTelegramTextFormatted()
-        // {
-        //     String lineBreak = Environment.NewLine;
-        //     StringBuilder sb = new StringBuilder();
+        public String GetTelegramTextFormatted()
+        {
+            String lineBreak = Environment.NewLine;
+            StringBuilder sb = new StringBuilder();
 
-        //     if (!String.IsNullOrEmpty(Name))
-        //     {
-        //         sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(Name));
-        //     }
-        //     else
-        //     {
-        //         sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(CardUrl.Replace(".jpg",String.Empty)));
-        //     }
+            if (!String.IsNullOrEmpty(name))
+            {
+                sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(name));
+            }
+            
 
-        //     if (!String.IsNullOrEmpty(ManaCost))
-        //     {
-        //         sb.AppendFormat(" - {0}", WebUtility.HtmlEncode(ManaCost));
-        //         sb.Append(lineBreak);
-        //     }
-        //     else
-        //     {
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(mana_cost))
+            {
+                sb.AppendFormat(" - {0}", WebUtility.HtmlEncode(mana_cost));
+                sb.Append(lineBreak);
+            }
+            else
+            {
+                sb.Append(lineBreak);
+            }
 
-        //     if (!String.IsNullOrEmpty(Type))
-        //     {
-        //         sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Type));
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(type_line))
+            {
+                sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(type_line));
+                sb.Append(lineBreak);
+            }
 
-        //     if (!String.IsNullOrEmpty(Text))
-        //     {
-        //         sb.Append(WebUtility.HtmlEncode(Text));
-        //         if (!sb.ToString().EndsWith("."))
-        //         {
-        //             sb.Append(".");
-        //         }
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(oracle_text))
+            {
+                sb.Append(WebUtility.HtmlEncode(oracle_text));
+                if (!sb.ToString().EndsWith("."))
+                {
+                    sb.Append(".");
+                }
+                sb.Append(lineBreak);
+            }
 
-        //     if (!String.IsNullOrEmpty(Flavor))
-        //     {
-        //         sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Flavor));
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(flavor_text))
+            {
+                sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(flavor_text));
+                sb.Append(lineBreak);
+            }
 
-        //     if (Power >= 0 || Toughness >= 0)
-        //     {
-        //         sb.Append(String.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
-        //         sb.Append(lineBreak);
-        //     }
+            if (!String.IsNullOrEmpty(power) || !String.IsNullOrEmpty(toughness))
+            {
+                sb.Append(String.Format("<b>P/T: {0}/{1}</b>", power, toughness));
+                sb.Append(lineBreak);
+            }
 
-        //     sb.Append(FullUrlWebSite);
+            sb.Append(scryfall_uri);
 
 
-        //     return sb.ToString();
-        // }
+            return sb.ToString();
+        }
 
-        // public String GetTwitterText()
-        // {
-        //     String lineBreak = Environment.NewLine;
-        //     StringBuilder sb = new StringBuilder();
-        //     if (!String.IsNullOrEmpty(Name))
-        //     {
-        //         sb.Append(Name);
-        //     }
-        //     else
-        //     {
-        //         sb.Append(CardUrl.Replace(".jpg",String.Empty));
-        //     }
+        public String GetTwitterText()
+        {
+            String lineBreak = Environment.NewLine;
+            StringBuilder sb = new StringBuilder();
 
-        //     if (!String.IsNullOrEmpty(Type))
-        //     {
-        //         sb.Append(" - ");
-        //         sb.Append(Type);
-        //     }
-
-        //     sb.Append(" #MTG");
-
-        //     sb.Append(lineBreak);
-        //     sb.Append(FullUrlWebSite);
-
-        //     return sb.ToString();
-        // }
+            if (!String.IsNullOrEmpty(name))
+            {
+                sb.Append(name);
+            }
 
 
-        // public Boolean HasAnyExtraInfo()
-        // {
-        //     if (!String.IsNullOrEmpty(ManaCost))
-        //     {
-        //         return true;
-        //     }
-        //     if (!String.IsNullOrEmpty(Type))
-        //     {
-        //         return true;
-        //     }
-        //     if (!String.IsNullOrEmpty(Text))
-        //     {
-        //         return true;
-        //     }
-        //     if (!String.IsNullOrEmpty(Flavor))
-        //     {
-        //         return true;
-        //     }
-        //     if (!String.IsNullOrEmpty(Illustrator))
-        //     {
-        //         return true;
-        //     }
-        //     if (Power > 0)
-        //     {
-        //         return true;
-        //     }
-        //     if (Toughness > 0)
-        //     {
-        //         return true;
-        //     }
-        //     if (AdditionalImage != null)
-        //     {
-        //         return true;
-        //     }
+            if (!String.IsNullOrEmpty(type_line))
+            {
+                sb.Append(" - ");
+                sb.Append(type_line);
+            }
 
-        //     return false;
+            sb.Append(" #MTG #MagicTheGathering");
 
-        // }
+            sb.Append(lineBreak);
+            sb.Append(scryfall_uri);
+
+            return sb.ToString();
+        }
+
         #endregion
     }
 }

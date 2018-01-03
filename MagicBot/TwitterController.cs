@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tweetinvi;
-using SixLabors.ImageSharp;
 using System.IO;
 using System.Linq;
 using Tweetinvi.Models;
@@ -31,41 +30,33 @@ namespace MagicBot
         #endregion
 
         #region Public Methods
-        public void PublishNewImage(SpoilItem spoil)
+        public void PublishNewImage(ScryfallCard card)
         {
 
             List<IMedia> lstImages = new List<IMedia>();
 
-            //gets a temp file for the image
-            String pathTempImage = System.IO.Path.GetTempFileName();
-            //saves the image in the disk in the temp file
-            FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
-            spoil.Image.Save(fileStream, ImageFormats.Png);
-            fileStream.Flush();
-            fileStream.Close();
-
             //loads the image and sends it
-            byte[] fileBits = File.ReadAllBytes(pathTempImage);
-            IMedia mainImage = Upload.UploadImage(fileBits);
-            lstImages.Add(mainImage);
-
-            if (spoil.AdditionalImage != null)
+            using (System.IO.Stream imageStream = Program.GetImageFromUrl(card.image_url))
             {
-                //gets a temp file for the image
-                String pathTempImageAdditional = System.IO.Path.GetTempFileName();
-                //saves the image in the disk in the temp file
-                FileStream fileStreamAdditional = new FileStream(pathTempImageAdditional, FileMode.OpenOrCreate);
-                spoil.AdditionalImage.Save(fileStreamAdditional, ImageFormats.Png);
-                fileStreamAdditional.Flush();
-                fileStreamAdditional.Close();
-
-                //loads the image and sends it
-                byte[] fileBitsAdditional = File.ReadAllBytes(pathTempImageAdditional);
-                IMedia additionalImage = Upload.UploadImage(fileBitsAdditional);
-                lstImages.Add(additionalImage);
+                byte[] byteImage = Program.ReadFully(imageStream);
+                IMedia mainImage = Upload.UploadImage(byteImage);
+                lstImages.Add(mainImage);
             }
 
-            var tweet = Tweet.PublishTweet(spoil.GetTwitterText(), new Tweetinvi.Parameters.PublishTweetOptionalParameters
+            if (card.ExtraSides != null)
+            {
+                foreach (ScryfallCard extraCard in card.ExtraSides)
+                {
+                    using (System.IO.Stream extraImageStream = Program.GetImageFromUrl(extraCard.image_url))
+                    {
+                        byte[] extraByteImage = Program.ReadFully(extraImageStream);
+                        IMedia extraImage = Upload.UploadImage(extraByteImage);
+                        lstImages.Add(extraImage);
+                    }
+                }
+            }
+
+            var tweet = Tweet.PublishTweet(card.GetTwitterText(), new Tweetinvi.Parameters.PublishTweetOptionalParameters
             {
                 Medias = lstImages
             });

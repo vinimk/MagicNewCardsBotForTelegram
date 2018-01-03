@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
-using SixLabors.ImageSharp;
 using System.IO;
 using Telegram.Bot.Exceptions;
 using System.Linq;
@@ -34,7 +33,7 @@ namespace MagicBot
             GetInitialUpdateEvents();
         }
 
-        public void SendImageToAll(SpoilItem spoil)
+        public void SendImageToAll(ScryfallCard card)
         {
             //goes trough all the chats and send a message for each one
             List<Chat> lstChat = Database.GetAllChats();
@@ -46,7 +45,7 @@ namespace MagicBot
             // };
             foreach (Chat chat in lstChat)
             {
-                SendSpoilToChat(spoil, chat);
+                SendSpoilToChat(card, chat);
             }
         }
 
@@ -64,70 +63,83 @@ namespace MagicBot
 
         #region Private Methods
 
-        private void SendSpoilToChat(SpoilItem spoil, Chat chat)
+        private void SendSpoilToChat(ScryfallCard card, Chat chat)
         {
             try
             {
                 Message replyToMessage;
-                String messageText;
-                //if the text is to big, we need to send it as a message afterwards
-                Boolean isTextToBig = spoil.GetTelegramText().Length >= 200;
-
-                //gets a temp file for the image
-                String pathTempImage = System.IO.Path.GetTempFileName();
-                //saves the image in the disk in the temp file
-                FileStream fileStream = new FileStream(pathTempImage, FileMode.OpenOrCreate);
-                spoil.Image.Save(fileStream, ImageFormats.Png);
-                fileStream.Flush();
-                fileStream.Close();
-
-                //loads the image and sends it
-                using (var stream = System.IO.File.Open(pathTempImage, FileMode.Open))
                 {
+                    String messageText;
+                    //if the text is to big, we need to send it as a message afterwards
+                    Boolean isTextToBig = card.GetTelegramText().Length >= 200;
+
                     if (isTextToBig)
                     {
-                        messageText = String.Empty;
+                        messageText = card.name;
                     }
                     else
                     {
-                        messageText = spoil.GetTelegramText();
+                        messageText = card.GetTelegramText();
                     }
 
-                    FileToSend fts = new FileToSend();
-                    fts.Content = stream;
-                    fts.Filename = pathTempImage.Split('\\').Last();
-                    Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText);
-                    task.Wait();
-                    //stores this if we need to send another message
-                    replyToMessage = task.Result;
-                }
-
-                //if there is a additional image, we send it as a reply
-                if (spoil.AdditionalImage != null)
-                {
-                    String pathTempImageAdditional = System.IO.Path.GetTempFileName();
-                    //saves the image in the disk in the temp file
-                    FileStream fileStreamAdditional = new FileStream(pathTempImageAdditional, FileMode.OpenOrCreate);
-                    spoil.AdditionalImage.Save(fileStreamAdditional, ImageFormats.Png);
-                    fileStreamAdditional.Flush();
-                    fileStreamAdditional.Close();
-
-                    //loads the image and sends it
-                    using (var stream = System.IO.File.Open(pathTempImageAdditional, FileMode.Open))
+                    //try to send directly, if it fails we download then upload it
+                    try
                     {
-                        FileToSend fts = new FileToSend();
-                        fts.Content = stream;
-                        fts.Filename = pathTempImageAdditional.Split('\\').Last();
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, fts, messageText, false, replyToMessage.MessageId);
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(new Uri(card.image_url)), messageText);
                         task.Wait();
-                        //stores this if we need to send another message
                         replyToMessage = task.Result;
                     }
+                    catch
+                    {
+                        Stream stream = Program.GetImageFromUrl(card.image_url);
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(card.name + ".PNG", stream), messageText);
+                        replyToMessage = task.Result;
+                    }
+
+                    if (isTextToBig)
+                    {
+                        _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
+                    }
+
                 }
 
-                if (isTextToBig)
+
+                //if there is a additional image, we send it as a reply
+                if (card.ExtraSides != null)
                 {
-                    _botClient.SendTextMessageAsync(chat, spoil.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
+                    foreach (ScryfallCard extraSide in card.ExtraSides)
+                    {
+                        String messageText;
+                        Boolean isTextToBig = extraSide.GetTelegramText().Length >= 200;
+
+                        if (isTextToBig)
+                        {
+                            messageText = extraSide.name;
+                        }
+                        else
+                        {
+                            messageText = extraSide.GetTelegramText();
+                        }
+
+                        try
+                        {
+                            Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(new Uri(extraSide.image_url)), messageText);
+                            task.Wait();
+                            replyToMessage = task.Result;
+                        }
+                        catch
+                        {
+                            Stream stream = Program.GetImageFromUrl(extraSide.image_url);
+                            Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(extraSide.name + ".PNG", stream), messageText);
+                            replyToMessage = task.Result;
+                        }
+
+                        if (isTextToBig)
+                        {
+                            _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
+                        }
+                    }
+
                 }
 
             }
@@ -145,7 +157,7 @@ namespace MagicBot
                 }
                 else
                 {
-                    Database.InsertLog("Telegram send message", spoil.Name, ex.ToString());
+                    Database.InsertLog("Telegram send message", card.name, ex.ToString());
                     Program.WriteLine(ex.Message);
                     Program.WriteLine(ex.StackTrace);
                 }
