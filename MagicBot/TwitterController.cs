@@ -30,24 +30,24 @@ namespace MagicBot
         #endregion
 
         #region Public Methods
-        public void PublishNewImage(ScryfallCard card)
+        public void PublishNewImage(Card card)
         {
 
             List<IMedia> lstImages = new List<IMedia>();
 
             //loads the image and sends it
-            using (System.IO.Stream imageStream = Program.GetImageFromUrl(card.image_url))
+            using (System.IO.Stream imageStream = Program.GetImageFromUrl(card.ImageUrl))
             {
                 byte[] byteImage = Program.ReadFully(imageStream);
                 IMedia mainImage = Upload.UploadImage(byteImage);
                 lstImages.Add(mainImage);
             }
 
-            if (card.ExtraSides != null)
+            if (card.ExtraSides != null && card.ExtraSides.Count > 0)
             {
-                foreach (ScryfallCard extraCard in card.ExtraSides)
+                foreach (Card extraCard in card.ExtraSides)
                 {
-                    using (System.IO.Stream extraImageStream = Program.GetImageFromUrl(extraCard.image_url))
+                    using (System.IO.Stream extraImageStream = Program.GetImageFromUrl(extraCard.ImageUrl))
                     {
                         byte[] extraByteImage = Program.ReadFully(extraImageStream);
                         IMedia extraImage = Upload.UploadImage(extraByteImage);
