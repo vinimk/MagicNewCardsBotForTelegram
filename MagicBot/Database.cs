@@ -20,8 +20,7 @@ namespace MagicBot
         }
 
         #region Update Methods
-  
-        public static void UpdateIsSent(ScryfallCard card, Boolean isSent)
+        public static void UpdateIsSent(Card card, Boolean isSent)
         {
             using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
@@ -34,13 +33,13 @@ namespace MagicBot
                     cmd.CommandText = @"UPDATE  ScryfallCard
                                         SET     IsCardSent =    @IsCardSent
                                         WHERE
-                                            ScryfallCardId = @ScryfallCardId";
+                                            FullUrlWebSite = @FullUrlWebSite";
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
-                        ParameterName = "@ScryfallCardId",
+                        ParameterName = "@FullUrlWebSite",
                         DbType = DbType.StringFixedLength,
-                        Value = card.id,
+                        Value = card.FullUrlWebSite,
                     });
                     cmd.Parameters.Add(new MySqlParameter()
                     {
@@ -62,7 +61,7 @@ namespace MagicBot
 
         #region Is In Methods
 
-        public static Boolean IsCardInDatabase(ScryfallCard card, Boolean isSent)
+        public static Boolean IsCardInDatabase(Card card, Boolean isSent)
         {
             using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
@@ -77,14 +76,15 @@ namespace MagicBot
                     cmd.CommandText = @"SELECT  count(1)
                                             FROM ScryfallCard
                                             WHERE
-                                            ScryfallCardId = @ScryfallCardId AND
+                                            FullUrlWebSite = @FullUrlWebSite AND
                                             IsCardSent = @IsCardSent";
+
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
-                        ParameterName = "@ScryfallCardId",
+                        ParameterName = "@FullUrlWebSite",
                         DbType = DbType.StringFixedLength,
-                        Value = card.id,
+                        Value = card.FullUrlWebSite,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
@@ -126,7 +126,7 @@ namespace MagicBot
                 {
                     cmd.CommandText = @"SELECT count(1)
                                             FROM Chat
-                                            WHERE 
+                                            WHERE
                                             ChatId = @ChatId";
 
                     cmd.Parameters.Add(new MySqlParameter()
@@ -202,7 +202,7 @@ namespace MagicBot
         #region Insert Methods
 
 
-        public static void InsertScryfallCard(ScryfallCard card)
+        public static void InsertScryfallCard(Card card)
         {
             if (Database.IsCardInDatabase(card, false))
                 return;
@@ -227,19 +227,28 @@ namespace MagicBot
                                                 @IsCardSent
                                                 )";
 
+                    String id;
+                    if (card.GetType() == typeof(ScryfallCard))
+                    {
+                        id = ((ScryfallCard)card).id;
+                    }
+                    else
+                    {
+                        id = Guid.NewGuid().ToString();
+                    }
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@ScryfallCardId",
                         DbType = DbType.StringFixedLength,
-                        Value = card.id,
+                        Value = id,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@Name",
                         DbType = DbType.StringFixedLength,
-                        Value = card.name,
+                        Value = card.Name,
                     });
 
 
@@ -247,9 +256,9 @@ namespace MagicBot
                     {
                         ParameterName = "@FullUrlWebSite",
                         DbType = DbType.StringFixedLength,
-                        Value = card.scryfall_uri,
+                        Value = card.FullUrlWebSite,
                     });
-                   
+
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@IsCardSent",
@@ -259,16 +268,16 @@ namespace MagicBot
 
 
                     cmd.ExecuteNonQuery();
-                    
+
                 }
                 if (conn.State == ConnectionState.Open)
                 {
                     conn.Close();
                 }
-                           
+
             }
         }
-        
+
         /// <summary>
         /// Insert new log info
         /// </summary>
@@ -341,7 +350,7 @@ namespace MagicBot
                 }
                 using (MySqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Chat 
+                    cmd.CommandText = @"INSERT INTO Chat
                                             (ChatId,
                                             Title,
                                             FirstName,

@@ -55,7 +55,7 @@ namespace MagicBot
                     Boolean isMainFace = true;
                     foreach (var face in card.card_faces)
                     {
-                        String name = null, type_line = null, oracle_text = null, mana_cost = null, power = null, toughness = null, flavor_text = null, artist = null, image_url = null;
+                        String name = null, type_line = null, oracle_text = null, mana_cost = null, power = null, toughness = null, flavor_text = null, image_url = null;
 
                         if (face["name"] != null)
                         {
@@ -92,10 +92,6 @@ namespace MagicBot
                             flavor_text = face["flavor_text"].ToString();
                         }
 
-                        if (face["artist"] != null)
-                        {
-                            artist = face["artist"].ToString();
-                        }
 
                         if (face["image_uris"] != null)
                         {
@@ -104,45 +100,37 @@ namespace MagicBot
 
                         if (isMainFace)
                         {
-                            card.name = name;
-                            card.type_line = type_line;
-                            card.oracle_text = oracle_text;
-                            card.mana_cost = mana_cost;
-                            card.power = power;
-                            card.toughness = toughness;
-                            card.flavor_text = flavor_text;
-                            card.artist = artist;
-                            card.image_url = image_url;
+                            card.Name = name;
+                            card.Type = type_line;
+                            card.Text = oracle_text;
+                            card.ManaCost = mana_cost;
+                            card.Power = power;
+                            card.Toughness = toughness;
+                            card.Flavor = flavor_text;
+                            card.ImageUrl = image_url;
 
                             isMainFace = false;
                         }
                         else
                         {
-                            if (card.ExtraSides == null)
-                            {
-                                card.ExtraSides = new List<ScryfallCard>();
-                            }
-
                             ScryfallCard extraCard = new ScryfallCard();
 
-                            extraCard.name = name;
-                            extraCard.type_line = type_line;
-                            extraCard.oracle_text = oracle_text;
-                            extraCard.mana_cost = mana_cost;
-                            extraCard.power = power;
-                            extraCard.toughness = toughness;
-                            extraCard.flavor_text = flavor_text;
-                            extraCard.artist = artist;
-                            extraCard.image_url = image_url;
+                            extraCard.Name = name;
+                            extraCard.Type = type_line;
+                            extraCard.Text = oracle_text;
+                            extraCard.ManaCost = mana_cost;
+                            extraCard.Power = power;
+                            extraCard.Toughness = toughness;
+                            extraCard.Flavor = flavor_text;
+                            extraCard.ImageUrl = image_url;
 
                             card.ExtraSides.Add(extraCard);
-                      
                         }
                     }
                 }
                 else
                 {
-                    card.image_url = card.image_uris["png"].ToString();
+                    card.ImageUrl = card.image_uris["png"].ToString();
                 }
 
 
@@ -177,9 +165,9 @@ namespace MagicBot
         #endregion
 
         #region Events
-        public delegate void NewCard(object sender, ScryfallCard newItem);
+        public delegate void NewCard(object sender, Card newItem);
         public event NewCard eventNewcard;
-        protected virtual void OnNewCard(ScryfallCard args)
+        protected virtual void OnNewCard(Card args)
         {
             if (eventNewcard != null)
                 eventNewcard(this, args);

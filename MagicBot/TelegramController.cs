@@ -33,7 +33,7 @@ namespace MagicBot
             GetInitialUpdateEvents();
         }
 
-        public void SendImageToAll(ScryfallCard card)
+        public void SendImageToAll(Card card)
         {
             //goes trough all the chats and send a message for each one
             List<Chat> lstChat = Database.GetAllChats();
@@ -63,11 +63,11 @@ namespace MagicBot
 
         #region Private Methods
 
-        private void SendSpoilToChat(ScryfallCard card, Chat chat)
+        private void SendSpoilToChat(Card card, Chat chat)
         {
             try
             {
-                Message replyToMessage;
+                int replyToMessage = 0;
                 {
                     String messageText;
                     //if the text is to big, we need to send it as a message afterwards
@@ -75,7 +75,7 @@ namespace MagicBot
 
                     if (isTextToBig)
                     {
-                        messageText = card.name;
+                        messageText = card.Name;
                     }
                     else
                     {
@@ -85,58 +85,65 @@ namespace MagicBot
                     //try to send directly, if it fails we download then upload it
                     try
                     {
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(new Uri(card.image_url)), messageText);
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(new Uri(card.ImageUrl)), messageText, false, replyToMessage);
                         task.Wait();
-                        replyToMessage = task.Result;
+                        replyToMessage = task.Result.MessageId;
                     }
                     catch
                     {
-                        Stream stream = Program.GetImageFromUrl(card.image_url);
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(card.name + ".PNG", stream), messageText);
-                        replyToMessage = task.Result;
+                        Stream stream = Program.GetImageFromUrl(card.ImageUrl);
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(card.Name + ".PNG", stream), messageText, false, replyToMessage);
+                        task.Wait();
+                        replyToMessage = task.Result.MessageId;
                     }
 
                     if (isTextToBig)
                     {
-                        _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
+                        Task<Message> task = _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
+                        task.Wait();
+                        replyToMessage = task.Result.MessageId;
                     }
 
                 }
 
 
                 //if there is a additional image, we send it as a reply
-                if (card.ExtraSides != null)
+                if (card.ExtraSides != null && card.ExtraSides.Count > 0)
                 {
-                    foreach (ScryfallCard extraSide in card.ExtraSides)
+                    foreach (Card extraSide in card.ExtraSides)
                     {
                         String messageText;
                         Boolean isTextToBig = extraSide.GetTelegramText().Length >= 200;
 
                         if (isTextToBig)
                         {
-                            messageText = extraSide.name;
+                            messageText = extraSide.Name;
                         }
                         else
                         {
                             messageText = extraSide.GetTelegramText();
                         }
 
+                        //try to send directly, if it fails we download then upload it
                         try
                         {
-                            Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(new Uri(extraSide.image_url)), messageText);
+                            Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(new Uri(extraSide.ImageUrl)), messageText, false, replyToMessage);
                             task.Wait();
-                            replyToMessage = task.Result;
+                            replyToMessage = task.Result.MessageId;
                         }
                         catch
                         {
-                            Stream stream = Program.GetImageFromUrl(extraSide.image_url);
-                            Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(extraSide.name + ".PNG", stream), messageText);
-                            replyToMessage = task.Result;
+                            Stream stream = Program.GetImageFromUrl(extraSide.ImageUrl);
+                            Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(extraSide.Name + ".PNG", stream), messageText, false, replyToMessage);
+                            task.Wait();
+                            replyToMessage = task.Result.MessageId;
                         }
 
                         if (isTextToBig)
                         {
-                            _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage.MessageId).Wait();
+                            Task<Message> task = _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
+                            task.Wait();
+                            replyToMessage = task.Result.MessageId;
                         }
                     }
 
@@ -157,7 +164,7 @@ namespace MagicBot
                 }
                 else
                 {
-                    Database.InsertLog("Telegram send message", card.name, ex.ToString());
+                    Database.InsertLog("Telegram send message", card.Name, ex.ToString());
                     Program.WriteLine(ex.Message);
                     Program.WriteLine(ex.StackTrace);
                 }

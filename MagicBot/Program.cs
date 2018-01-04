@@ -24,7 +24,7 @@ namespace MagicBot
             {
                 //first initialize our internals
                 Init();
-               
+
                 //first we update the list of chats
                 Program.WriteLine("Updating telegram chat list");
                 _telegramController.InitialUpdate();
@@ -44,7 +44,8 @@ namespace MagicBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Program.WriteLine("Getting new cards");
-                    _scryfallApiTasker.GetNewCards();
+                    //_scryfallApiTasker.GetNewCards();
+                    _mythicApiTasker.GetNewCards();
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
                     Program.WriteLine(String.Format("Going to sleep for {0} ms.", _timeInternalMS));
@@ -59,7 +60,8 @@ namespace MagicBot
         }
 
         #region Definitions
-        private static ScryfallApiTasker _scryfallApiTasker;
+        private static MythicApiTasker _mythicApiTasker;
+        //private static ScryfallApiTasker _scryfallApiTasker;
         private static TelegramController _telegramController;
         private static TwitterController _twitterController;
         private static int _timeInternalMS;
@@ -79,9 +81,13 @@ namespace MagicBot
             _timeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
 
             Database.SetConnectionString(config["ConnectionStringMySQL"]);
-            
-            _scryfallApiTasker = new ScryfallApiTasker();
-            _scryfallApiTasker.eventNewcard += _scryfallApiTasker_eventNewcard;
+
+            _mythicApiTasker = new MythicApiTasker(config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"]);
+            _mythicApiTasker.eventNewcard += EventNewcard;
+
+
+            // _scryfallApiTasker = new ScryfallApiTasker();
+            // _scryfallApiTasker.eventNewcard += EventNewcard;
 
             _telegramController = new TelegramController(config["TelegramBotApiKey"]);
 
@@ -93,23 +99,23 @@ namespace MagicBot
 
         #region Events Handlers
 
-        private static void _scryfallApiTasker_eventNewcard(object sender, ScryfallCard newItem)
+        private static void EventNewcard(object sender, Card newItem)
         {
-            if (newItem.image_url != null)
+            if (newItem.ImageUrl != null)
             {
-                Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.name));
+                Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
                 try
                 {
                     _telegramController.SendImageToAll(newItem);
                 }
                 catch (Exception ex)
                 {
-                    Database.InsertLog("Telegram send images to all", newItem.name, ex.ToString());
-                    Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.name));
+                    Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
+                    Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
                 }
 
-                Program.WriteLine(String.Format("Tweeting new card {0}", newItem.name));
+                Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
                     _twitterController.PublishNewImage(newItem);
@@ -117,8 +123,8 @@ namespace MagicBot
                 }
                 catch (Exception ex)
                 {
-                    Database.InsertLog("Twitter send image", newItem.name, ex.ToString());
-                    Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.name));
+                    Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
+                    Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
                 }
             }
