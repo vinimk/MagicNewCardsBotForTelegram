@@ -1,13 +1,13 @@
 using System;
+using HtmlAgilityPack;
+using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
-using Newtonsoft.Json;
-using System.Net;
-using System.IO;
-using HtmlAgilityPack;
 
 namespace MagicBot
 {
@@ -15,8 +15,7 @@ namespace MagicBot
     {
         internal readonly String _apiUrl = "https://api.scryfall.com/cards?page=0";
         public ScryfallApiTasker()
-        {
-        }
+        { }
 
         #region Public Methods
         public void GetNewCards()
@@ -92,7 +91,6 @@ namespace MagicBot
                             flavor_text = face["flavor_text"].ToString();
                         }
 
-
                         if (face["image_uris"] != null)
                         {
                             image_url = face["image_uris"]["png"].ToString();
@@ -133,7 +131,6 @@ namespace MagicBot
                     card.ImageUrl = card.image_uris["png"].ToString();
                 }
 
-
                 //adds in the database
                 Database.InsertScryfallCard(card);
                 //fires the event to do stuff with it
@@ -150,7 +147,7 @@ namespace MagicBot
                 httpWebRequest.ContentType = "application/json; charset=utf-8";
                 httpWebRequest.Accept = "application/json";
                 httpWebRequest.Method = WebRequestMethods.Http.Get;
-                using (var streamReader = new StreamReader(((HttpWebResponse)httpWebRequest.GetResponse()).GetResponseStream()))
+                using(var streamReader = new StreamReader(((HttpWebResponse)httpWebRequest.GetResponse()).GetResponseStream()))
                 {
                     return streamReader.ReadToEnd();
                 }

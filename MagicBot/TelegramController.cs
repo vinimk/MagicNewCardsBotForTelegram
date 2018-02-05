@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Telegram.Bot.Types;
 using System.IO;
-using Telegram.Bot.Exceptions;
 using System.Linq;
+using System.Threading.Tasks;
 using Telegram.Bot.Args;
+using Telegram.Bot.Exceptions;
+using Telegram.Bot.Types;
 
 namespace MagicBot
 {
@@ -49,7 +49,6 @@ namespace MagicBot
             }
         }
 
-
         public void HookUpdateEvent()
         {
             //removes then adds the handler, that way it make sure that the event is handled
@@ -57,7 +56,6 @@ namespace MagicBot
             _botClient.OnUpdate += botClientOnUpdate;
             _botClient.StartReceiving();
         }
-
 
         #endregion
 
@@ -106,7 +104,6 @@ namespace MagicBot
 
                 }
 
-
                 //if there is a additional image, we send it as a reply
                 if (card.ExtraSides != null && card.ExtraSides.Count > 0)
                 {
@@ -150,7 +147,7 @@ namespace MagicBot
                 }
 
             }
-            catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
+            catch (Exception ex)//sometimes this exception is not a problem, like if the bot was removed from the group
             {
                 if (ex.Message.Contains("bot was kicked"))
                 {
@@ -171,8 +168,6 @@ namespace MagicBot
             }
         }
 
-
-
         private void GetInitialUpdateEvents()
         {
             //get all updates
@@ -180,7 +175,7 @@ namespace MagicBot
             taskTelegramUpdates.Wait();
             Update[] updates = taskTelegramUpdates.Result;
 
-            if (updates.Count() > 0)
+            if (updates.Count()> 0)
             {
                 //check if the chatID is in the list, if it isn't, adds it
                 foreach (Update update in updates)
@@ -191,7 +186,7 @@ namespace MagicBot
                         //and there is only one message in the return
                         //it means that there are no new messages after the offset
                         //so we can stop this and add the hook for the on update event
-                        if (updates.Count() == 1 &&
+                        if (updates.Count()== 1 &&
                             _offset == update.Id)
                         {
                             HookUpdateEvent();
