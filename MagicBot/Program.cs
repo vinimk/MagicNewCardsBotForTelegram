@@ -1,17 +1,17 @@
 ﻿using System;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Linq;
-using System.Timers;
 using System.Threading;
-using Telegram.Bot.Types.InputMessageContents;
+using System.Threading.Tasks;
+using System.Timers;
 using Telegram.Bot.Types;
-using Microsoft.Extensions.Configuration;
-using System.IO;
-using System.Collections.Generic;
-using System.Net;
+using Telegram.Bot.Types.InputMessageContents;
 
 namespace MagicBot
 {
@@ -44,7 +44,6 @@ namespace MagicBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Program.WriteLine("Getting new cards");
-                    //_scryfallApiTasker.GetNewCards();
                     _mythicApiTasker.GetNewCards();
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
@@ -53,8 +52,17 @@ namespace MagicBot
                 }
                 catch (Exception ex)
                 {
-                    Database.InsertLog("Getting new cards", String.Empty, ex.ToString());
-                    Program.WriteLine(ex.ToString());
+                    try
+                    {
+                        Database.InsertLog("Getting new cards", String.Empty, ex.ToString());
+                        Program.WriteLine(ex.ToString());
+                    }
+                    catch (Exception ex2)
+                    {
+                        Console.WriteLine("Exception in catch, sad");
+                        Console.WriteLine(ex2.ToString());
+                    }
+                    Thread.Sleep(_timeInternalMS);
                 }
             }
         }
@@ -73,8 +81,8 @@ namespace MagicBot
             Program.WriteLine("Initializing");
 
             var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json");
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json");
 
             var config = builder.Build();
 
@@ -84,7 +92,6 @@ namespace MagicBot
 
             _mythicApiTasker = new MythicApiTasker(config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"]);
             _mythicApiTasker.eventNewcard += EventNewcard;
-
 
             // _scryfallApiTasker = new ScryfallApiTasker();
             // _scryfallApiTasker.eventNewcard += EventNewcard;
@@ -145,17 +152,16 @@ namespace MagicBot
         public static byte[] ReadFully(Stream input)
         {
             byte[] buffer = new byte[16 * 1024];
-            using (MemoryStream ms = new MemoryStream())
+            using(MemoryStream ms = new MemoryStream())
             {
                 int read;
-                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                while ((read = input.Read(buffer, 0, buffer.Length))> 0)
                 {
                     ms.Write(buffer, 0, read);
                 }
                 return ms.ToArray();
             }
         }
-
 
         public static void WriteLine(String message)
         {

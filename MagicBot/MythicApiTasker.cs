@@ -1,13 +1,13 @@
 using System;
+using HtmlAgilityPack;
+using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
-using Newtonsoft.Json;
-using System.Net;
-using System.IO;
-using HtmlAgilityPack;
 
 namespace MagicBot
 {
@@ -54,7 +54,6 @@ namespace MagicBot
             }
         }
 
-
         private void CheckCard(Card card)
         {
             //check if the spoil is in the database
@@ -70,7 +69,6 @@ namespace MagicBot
             }
         }
 
-
         private Card GetAdditionalInfo(Card spoil)
         {
             //we do all of this in empty try catches because it is not mandatory information
@@ -80,17 +78,16 @@ namespace MagicBot
                 HtmlWeb htmlWeb = new HtmlWeb();
                 HtmlDocument html = htmlWeb.Load(spoil.FullUrlWebSite);
 
-
                 try
                 {
                     var node2 = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'THE individual card')]");
                     foreach (HtmlNode possibleImage in node2.ParentNode.ChildNodes)
                     {
-                        if(possibleImage.Attributes["src"] != null)
+                        if (possibleImage.Attributes["src"] != null)
                         {
                             Uri url = new Uri(spoil.FullUrlWebSite);
-                            string possible = url.AbsoluteUri.Remove(url.AbsoluteUri.Length - url.Segments.Last().Length) +  possibleImage.Attributes["src"].Value.ToString();
-                            if(possible != spoil.ImageUrl)
+                            string possible = url.AbsoluteUri.Remove(url.AbsoluteUri.Length - url.Segments.Last().Length)+ possibleImage.Attributes["src"].Value.ToString();
+                            if (possible != spoil.ImageUrl)
                             {
                                 Card extraSide = new Card();
                                 extraSide.ImageUrl = possible;
@@ -99,11 +96,27 @@ namespace MagicBot
                         }
                     }
                 }
-                catch { }
+                catch
+                { }
 
-                try { spoil.Name = html.DocumentNode.SelectSingleNode("html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[1]/td[1]/font[1]").LastChild.InnerText.Trim(); } catch { }
-                try { spoil.ManaCost = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[2]/td[1]").LastChild.InnerText.Trim(); } catch { }
-                try { spoil.Type = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[3]/td[1]").LastChild.InnerText.Trim(); } catch { }
+                try
+                {
+                    spoil.Name = html.DocumentNode.SelectSingleNode("html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[1]/td[1]/font[1]").LastChild.InnerText.Trim();
+                }
+                catch
+                { }
+                try
+                {
+                    spoil.ManaCost = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[2]/td[1]").LastChild.InnerText.Trim();
+                }
+                catch
+                { }
+                try
+                {
+                    spoil.Type = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[3]/td[1]").LastChild.InnerText.Trim();
+                }
+                catch
+                { }
                 try
                 {
                     StringBuilder sb = new StringBuilder();
@@ -117,8 +130,14 @@ namespace MagicBot
                     }
                     spoil.Text = System.Net.WebUtility.HtmlDecode(sb.ToString());
                 }
-                catch { }
-                try { spoil.Flavor = System.Net.WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[5]/td[1]/i[1]").LastChild.InnerText.Trim()); } catch { }
+                catch
+                { }
+                try
+                {
+                    spoil.Flavor = System.Net.WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[5]/td[1]/i[1]").LastChild.InnerText.Trim());
+                }
+                catch
+                { }
 
                 try
                 {
@@ -140,11 +159,12 @@ namespace MagicBot
                         }
                     }
 
-
                 }
-                catch { }
+                catch
+                { }
             }
-            catch { }
+            catch
+            { }
             return spoil;
         }
 
@@ -162,9 +182,9 @@ namespace MagicBot
                 foreach (HtmlNode node in nodesCards)
                 {
                     //also the cards have a special class called 'card', so we use it to get the right ones
-                    if (node.Attributes.Contains("src") &&
-                    node.Attributes["src"].Value.ToString().Contains("cards") &&
-                    node.Attributes["src"].Value.ToString().EndsWith(".jpg"))
+                    if (node.Attributes.Contains("src")&&
+                        node.Attributes["src"].Value.ToString().Contains("cards")&&
+                        node.Attributes["src"].Value.ToString().EndsWith(".jpg"))
                     {
                         Card card = new Card();
                         card.FullUrlWebSite = _websiteUrl + node.ParentNode.Attributes["href"].Value.ToString();
@@ -173,7 +193,7 @@ namespace MagicBot
                     }
 
                     //only get the lastest 50
-                    if(lstCards.Count == 50)
+                    if (lstCards.Count == 50)
                         break;
                 }
             }

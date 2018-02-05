@@ -1,32 +1,82 @@
 using System;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace MagicBot
 {
     public class Card
     {
         [JsonProperty("name")]
-        public String Name { get; set; }
+        public String Name
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("type_line")]
-        public String Type { get; set; }
+        public String Type
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("oracle_text")]
-        public String Text { get; set; }
+        public String Text
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("mana_cost")]
-        public String ManaCost { get; set; }
+        public String ManaCost
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("power")]
-        public String Power { get; set; }
+        public String Power
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("toughness")]
-        public String Toughness { get; set; }
+        public String Toughness
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("flavor_text")]
-        public String Flavor { get; set; }
-        public List<Card> ExtraSides { get; set; }
-        public Boolean IsCardSent { get; set; }
-        public String ImageUrl { get; set; }
-        public String FullUrlWebSite { get; set; }
+        public String Flavor
+        {
+            get;
+            set;
+        }
+        public List<Card> ExtraSides
+        {
+            get;
+            set;
+        }
+        public Boolean IsCardSent
+        {
+            get;
+            set;
+        }
+        public String ImageUrl
+        {
+            get;
+            set;
+        }
+        public String FullUrlWebSite
+        {
+            get;
+            set;
+        }
 
         #region Methods
 
@@ -68,7 +118,7 @@ namespace MagicBot
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
+            if (!String.IsNullOrEmpty(Power)|| (!String.IsNullOrEmpty(Toughness)))
             {
                 sb.AppendFormat(" ({0}/{1})", Power, Toughness);
                 sb.Append(lineBreak);
@@ -121,14 +171,13 @@ namespace MagicBot
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
+            if (!String.IsNullOrEmpty(Power)|| (!String.IsNullOrEmpty(Toughness)))
             {
                 sb.Append(String.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
                 sb.Append(lineBreak);
             }
 
             sb.Append(FullUrlWebSite);
-
 
             return sb.ToString();
         }

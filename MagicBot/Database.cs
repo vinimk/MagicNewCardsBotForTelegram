@@ -1,10 +1,10 @@
 using System;
+using MySql.Data.MySqlClient;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Text;
 using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -22,13 +22,13 @@ namespace MagicBot
         #region Update Methods
         public static void UpdateIsSent(Card card, Boolean isSent)
         {
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            using(MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 if (conn.State != ConnectionState.Open)
                 {
                     conn.Open();
                 }
-                using (MySqlCommand cmd = conn.CreateCommand())
+                using(MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"UPDATE  ScryfallCard
                                         SET     IsCardSent =    @IsCardSent
@@ -38,14 +38,14 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@FullUrlWebSite",
-                        DbType = DbType.StringFixedLength,
-                        Value = card.FullUrlWebSite,
+                            DbType = DbType.StringFixedLength,
+                            Value = card.FullUrlWebSite,
                     });
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@IsCardSent",
-                        DbType = DbType.Boolean,
-                        Value = isSent,
+                            DbType = DbType.Boolean,
+                            Value = isSent,
                     });
 
                     cmd.ExecuteNonQuery();
@@ -63,7 +63,7 @@ namespace MagicBot
 
         public static Boolean IsCardInDatabase(Card card, Boolean isSent)
         {
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            using(MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 Int64 count = -1;
                 if (conn.State != ConnectionState.Open)
@@ -71,7 +71,7 @@ namespace MagicBot
                     conn.Open();
                 }
 
-                using (MySqlCommand cmd = conn.CreateCommand())
+                using(MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"SELECT  count(1)
                                             FROM ScryfallCard
@@ -79,22 +79,21 @@ namespace MagicBot
                                             FullUrlWebSite = @FullUrlWebSite AND
                                             IsCardSent = @IsCardSent";
 
-
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@FullUrlWebSite",
-                        DbType = DbType.StringFixedLength,
-                        Value = card.FullUrlWebSite,
+                            DbType = DbType.StringFixedLength,
+                            Value = card.FullUrlWebSite,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@IsCardSent",
-                        DbType = DbType.Boolean,
-                        Value = isSent,
+                            DbType = DbType.Boolean,
+                            Value = isSent,
                     });
 
-                    using (DbDataReader reader = cmd.ExecuteReader())
+                    using(DbDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -112,17 +111,16 @@ namespace MagicBot
             }
         }
 
-
         public static Boolean IsChatInDatabase(Chat chat)
         {
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            using(MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 Int64 count = -1;
                 if (conn.State != ConnectionState.Open)
                 {
                     conn.Open();
                 }
-                using (MySqlCommand cmd = conn.CreateCommand())
+                using(MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"SELECT count(1)
                                             FROM Chat
@@ -132,11 +130,11 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@ChatId",
-                        DbType = DbType.Int64,
-                        Value = chat.Id,
+                            DbType = DbType.Int64,
+                            Value = chat.Id,
                     });
 
-                    using (DbDataReader reader = cmd.ExecuteReader())
+                    using(DbDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -159,14 +157,14 @@ namespace MagicBot
 
         public static List<Chat> GetAllChats()
         {
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            using(MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 List<Chat> retList = new List<Chat>();
                 if (conn.State != ConnectionState.Open)
                 {
                     conn.Open();
                 }
-                using (MySqlCommand cmd = conn.CreateCommand())
+                using(MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"SELECT  ChatId,
                                             ifNull(Title,''),
@@ -174,7 +172,7 @@ namespace MagicBot
                                             ifNull(Type,'')
                                             FROM Chat ";
 
-                    using (DbDataReader reader = cmd.ExecuteReader())
+                    using(DbDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -196,24 +194,22 @@ namespace MagicBot
             }
         }
 
-
         #endregion
 
         #region Insert Methods
-
 
         public static void InsertScryfallCard(Card card)
         {
             if (Database.IsCardInDatabase(card, false))
                 return;
 
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            using(MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 if (conn.State != ConnectionState.Open)
                 {
                     conn.Open();
                 }
-                using (MySqlCommand cmd = conn.CreateCommand())
+                using(MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"INSERT INTO ScryfallCard
                                                 (ScryfallCardId,
@@ -228,7 +224,7 @@ namespace MagicBot
                                                 )";
 
                     String id;
-                    if (card.GetType() == typeof(ScryfallCard))
+                    if (card.GetType()== typeof(ScryfallCard))
                     {
                         id = ((ScryfallCard)card).id;
                     }
@@ -240,32 +236,30 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@ScryfallCardId",
-                        DbType = DbType.StringFixedLength,
-                        Value = id,
+                            DbType = DbType.StringFixedLength,
+                            Value = id,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@Name",
-                        DbType = DbType.StringFixedLength,
-                        Value = card.Name,
+                            DbType = DbType.StringFixedLength,
+                            Value = card.Name,
                     });
-
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@FullUrlWebSite",
-                        DbType = DbType.StringFixedLength,
-                        Value = card.FullUrlWebSite,
+                            DbType = DbType.StringFixedLength,
+                            Value = card.FullUrlWebSite,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@IsCardSent",
-                        DbType = DbType.Boolean,
-                        Value = false,
+                            DbType = DbType.Boolean,
+                            Value = false,
                     });
-
 
                     cmd.ExecuteNonQuery();
 
@@ -287,16 +281,18 @@ namespace MagicBot
         /// <returns>ID of the saved log</returns>
         public static Int32 InsertLog(String methodName, String spoilName, String message)
         {
-            Int32 result = -1;
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            try
             {
-                if (conn.State != ConnectionState.Open)
+                Int32 result = -1;
+                using(MySqlConnection conn = new MySqlConnection(_connectionString))
                 {
-                    conn.Open();
-                }
-                using (MySqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = @"INSERT INTO Log
+                    if (conn.State != ConnectionState.Open)
+                    {
+                        conn.Open();
+                    }
+                    using(MySqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"INSERT INTO Log
                                             (Message,
                                             Method,
                                             SpoilName
@@ -306,49 +302,54 @@ namespace MagicBot
                                             @Method,
                                             @SpoilName)";
 
-                    cmd.Parameters.Add(new MySqlParameter()
-                    {
-                        ParameterName = "@Message",
-                        DbType = DbType.StringFixedLength,
-                        Value = message,
-                    });
+                        cmd.Parameters.Add(new MySqlParameter()
+                        {
+                            ParameterName = "@Message",
+                                DbType = DbType.StringFixedLength,
+                                Value = message,
+                        });
 
-                    cmd.Parameters.Add(new MySqlParameter()
-                    {
-                        ParameterName = "@Method",
-                        DbType = DbType.StringFixedLength,
-                        Value = methodName,
-                    });
+                        cmd.Parameters.Add(new MySqlParameter()
+                        {
+                            ParameterName = "@Method",
+                                DbType = DbType.StringFixedLength,
+                                Value = methodName,
+                        });
 
-                    cmd.Parameters.Add(new MySqlParameter()
-                    {
-                        ParameterName = "@SpoilName",
-                        DbType = DbType.StringFixedLength,
-                        Value = spoilName,
-                    });
+                        cmd.Parameters.Add(new MySqlParameter()
+                        {
+                            ParameterName = "@SpoilName",
+                                DbType = DbType.StringFixedLength,
+                                Value = spoilName,
+                        });
 
-                    cmd.ExecuteNonQuery();
-                    result = (Int32)cmd.LastInsertedId;
+                        cmd.ExecuteNonQuery();
+                        result = (Int32)cmd.LastInsertedId;
+                    }
+                    if (conn.State == ConnectionState.Open)
+                    {
+                        conn.Close();
+                    }
+                    return result;
                 }
-                if (conn.State == ConnectionState.Open)
-                {
-                    conn.Close();
-                }
-                return result;
             }
-
+            catch (Exception)
+            {
+                Console.WriteLine("Error inserting log, possible that the server was offline");
+                return -1;
+            }
         }
 
         public static Int64 InsertChat(Chat chat)
         {
             Int64 ret = -1;
-            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            using(MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 if (conn.State != ConnectionState.Open)
                 {
                     conn.Open();
                 }
-                using (MySqlCommand cmd = conn.CreateCommand())
+                using(MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"INSERT INTO Chat
                                             (ChatId,
@@ -364,29 +365,29 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@ChatId",
-                        DbType = DbType.Int64,
-                        Value = chat.Id,
+                            DbType = DbType.Int64,
+                            Value = chat.Id,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@Title",
-                        DbType = DbType.StringFixedLength,
-                        Value = chat.Title,
+                            DbType = DbType.StringFixedLength,
+                            Value = chat.Title,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@FirstName",
-                        DbType = DbType.StringFixedLength,
-                        Value = chat.FirstName,
+                            DbType = DbType.StringFixedLength,
+                            Value = chat.FirstName,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@Type",
-                        DbType = DbType.StringFixedLength,
-                        Value = chat.Type.ToString(),
+                            DbType = DbType.StringFixedLength,
+                            Value = chat.Type.ToString(),
                     });
 
                     cmd.ExecuteNonQuery();

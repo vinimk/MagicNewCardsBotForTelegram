@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Tweetinvi;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Tweetinvi;
 using Tweetinvi.Models;
 
 namespace MagicBot
@@ -36,7 +36,7 @@ namespace MagicBot
             List<IMedia> lstImages = new List<IMedia>();
 
             //loads the image and sends it
-            using (System.IO.Stream imageStream = Program.GetImageFromUrl(card.ImageUrl))
+            using(System.IO.Stream imageStream = Program.GetImageFromUrl(card.ImageUrl))
             {
                 byte[] byteImage = Program.ReadFully(imageStream);
                 IMedia mainImage = Upload.UploadImage(byteImage);
@@ -47,7 +47,7 @@ namespace MagicBot
             {
                 foreach (Card extraCard in card.ExtraSides)
                 {
-                    using (System.IO.Stream extraImageStream = Program.GetImageFromUrl(extraCard.ImageUrl))
+                    using(System.IO.Stream extraImageStream = Program.GetImageFromUrl(extraCard.ImageUrl))
                     {
                         byte[] extraByteImage = Program.ReadFully(extraImageStream);
                         IMedia extraImage = Upload.UploadImage(extraByteImage);
