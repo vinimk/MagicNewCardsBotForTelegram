@@ -77,7 +77,8 @@ namespace MagicBot
                                             FROM ScryfallCard
                                             WHERE
                                             FullUrlWebSite = @FullUrlWebSite AND
-                                            IsCardSent = @IsCardSent";
+                                            IsCardSent = @IsCardSent AND
+											Date > @Date";
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
@@ -93,7 +94,15 @@ namespace MagicBot
                             Value = isSent,
                     });
 
-                    using(DbDataReader reader = cmd.ExecuteReader())
+                    //dominaria workaround 
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@Date",
+                        MySqlDbType = MySqlDbType.DateTime,
+                        Value = new DateTime(2018, 03, 11, 0, 0, 0), //the day that scryfall sent all the new card 
+                    });
+
+                    using (DbDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {

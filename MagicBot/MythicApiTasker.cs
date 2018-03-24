@@ -48,8 +48,9 @@ namespace MagicBot
         {
             //get the aditional infos from the website
             List<Card> lstCards = GetAvaliableCardsInWebSite();
-            foreach (Card card in lstCards)
+            for (int i = 0; i < 20; i++)
             {
+                Card card = lstCards[i];
                 CheckCard(card);
             }
         }
@@ -86,7 +87,7 @@ namespace MagicBot
                         if (possibleImage.Attributes["src"] != null)
                         {
                             Uri url = new Uri(spoil.FullUrlWebSite);
-                            string possible = url.AbsoluteUri.Remove(url.AbsoluteUri.Length - url.Segments.Last().Length)+ possibleImage.Attributes["src"].Value.ToString();
+                            string possible = url.AbsoluteUri.Remove(url.AbsoluteUri.Length - url.Segments.Last().Length) + possibleImage.Attributes["src"].Value.ToString();
                             if (possible != spoil.ImageUrl)
                             {
                                 Card extraSide = new Card();
@@ -182,8 +183,8 @@ namespace MagicBot
                 foreach (HtmlNode node in nodesCards)
                 {
                     //also the cards have a special class called 'card', so we use it to get the right ones
-                    if (node.Attributes.Contains("src")&&
-                        node.Attributes["src"].Value.ToString().Contains("cards")&&
+                    if (node.Attributes.Contains("src") &&
+                        node.Attributes["src"].Value.ToString().Contains("cards") &&
                         node.Attributes["src"].Value.ToString().EndsWith(".jpg"))
                     {
                         Card card = new Card();
