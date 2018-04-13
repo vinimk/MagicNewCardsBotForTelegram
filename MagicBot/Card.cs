@@ -205,6 +205,11 @@ namespace MagicBot
             return sb.ToString();
         }
 
+        public override string ToString()
+        {
+            return this.FullUrlWebSite;
+        }
+
         #endregion
     }
 }

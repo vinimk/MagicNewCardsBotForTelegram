@@ -39,7 +39,7 @@ namespace MagicBot
             using(System.IO.Stream imageStream = Program.GetImageFromUrl(card.ImageUrl))
             {
                 byte[] byteImage = Program.ReadFully(imageStream);
-                IMedia mainImage = Upload.UploadImage(byteImage);
+                IMedia mainImage = Upload.UploadBinary(byteImage);
                 lstImages.Add(mainImage);
             }
 
@@ -50,7 +50,7 @@ namespace MagicBot
                     using(System.IO.Stream extraImageStream = Program.GetImageFromUrl(extraCard.ImageUrl))
                     {
                         byte[] extraByteImage = Program.ReadFully(extraImageStream);
-                        IMedia extraImage = Upload.UploadImage(extraByteImage);
+                        IMedia extraImage = Upload.UploadBinary(extraByteImage);
                         lstImages.Add(extraImage);
                     }
                 }

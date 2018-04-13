@@ -4,19 +4,21 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="appsettings.json" CopyToPublishDirectory="Always">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <PackageReference Include="HtmlAgilityPack" Version="1.7.1" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.7.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.1" />
-    <PackageReference Include="MySqlConnector" Version="0.37.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="MySqlConnector" Version="0.39.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="Telegram.Bot" Version="13.4.0" />
-    <PackageReference Include="TweetinviAPI" Version="2.1.0" />
+    <PackageReference Include="TweetinviAPI" Version="3.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToPublishDirectory="Always">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JSONSchema="" /></VisualStudio></ProjectExtensions>
 </Project>
