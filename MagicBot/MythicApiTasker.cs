@@ -48,7 +48,7 @@ namespace MagicBot
         {
             //get the aditional infos from the website
             List<Card> lstCards = GetAvaliableCardsInWebSite();
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < Database.MAX_CARDS; i++)
             {
                 Card card = lstCards[i];
                 CheckCard(card);
@@ -194,7 +194,7 @@ namespace MagicBot
                     }
 
                     //only get the lastest 50
-                    if (lstCards.Count == 50)
+                    if (lstCards.Count == Database.MAX_CARDS)
                         break;
                 }
             }

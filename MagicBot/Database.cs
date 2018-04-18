@@ -14,6 +14,8 @@ namespace MagicBot
     {
         private static String _connectionString;
 
+        public static readonly Int32 MAX_CARDS = 100;
+
         public static void SetConnectionString(String connectionString)
         {
             _connectionString = connectionString;
