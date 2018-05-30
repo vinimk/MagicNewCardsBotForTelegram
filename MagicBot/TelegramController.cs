@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Telegram.Bot.Args;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.InputFiles;
 
 namespace MagicBot
 {
@@ -83,14 +84,14 @@ namespace MagicBot
                     //try to send directly, if it fails we download then upload it
                     try
                     {
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(new Uri(card.ImageUrl)), messageText, false, replyToMessage);
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, new InputOnlineFile(card.ImageUrl), messageText, replyToMessageId: replyToMessage);
                         task.Wait();
                         replyToMessage = task.Result.MessageId;
                     }
                     catch
                     {
                         Stream stream = Program.GetImageFromUrl(card.ImageUrl);
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(card.Name + ".PNG", stream), messageText, false, replyToMessage);
+                        Task<Message> task = _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, card.Name + ".PNG"), messageText, replyToMessageId: replyToMessage);
                         task.Wait();
                         replyToMessage = task.Result.MessageId;
                     }
@@ -124,14 +125,14 @@ namespace MagicBot
                         //try to send directly, if it fails we download then upload it
                         try
                         {
-                            Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(new Uri(extraSide.ImageUrl)), messageText, false, replyToMessage);
+                            Task<Message> task = _botClient.SendPhotoAsync(chat, new InputOnlineFile(extraSide.ImageUrl), messageText, replyToMessageId: replyToMessage);
                             task.Wait();
                             replyToMessage = task.Result.MessageId;
                         }
                         catch
                         {
                             Stream stream = Program.GetImageFromUrl(extraSide.ImageUrl);
-                            Task<Message> task = _botClient.SendPhotoAsync(chat, new FileToSend(extraSide.Name + ".PNG", stream), messageText, false, replyToMessage);
+                            Task<Message> task = _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, extraSide.Name + ".PNG"), messageText, replyToMessageId: replyToMessage);
                             task.Wait();
                             replyToMessage = task.Result.MessageId;
                         }

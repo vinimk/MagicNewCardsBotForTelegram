@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.InputMessageContents;
 
 namespace MagicBot
 {
