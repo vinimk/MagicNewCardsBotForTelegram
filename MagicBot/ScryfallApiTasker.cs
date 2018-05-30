@@ -18,14 +18,14 @@ namespace MagicBot
         { }
 
         #region Public Methods
-        public void GetNewCards()
+        async public Task GetNewCards()
         {
-            CheckNewCards();
+            await CheckNewCards();
         }
         #endregion
 
         #region Private Methods
-        private void CheckNewCards()
+        async private Task CheckNewCards()
         {
             String jsonMsg = GetFromAPI();
 
@@ -36,16 +36,17 @@ namespace MagicBot
 
                 foreach (ScryfallCard card in response.data)
                 {
-                    CheckCard(card);
+                    await CheckCard(card);
                 }
 
             }
         }
 
-        private void CheckCard(ScryfallCard card)
+        async private Task CheckCard(ScryfallCard card)
         {
             //check if the card is in the database and has NOT been sent
-            if (!Database.IsCardInDatabase(card, true))
+            var isInDb = await Database.IsCardInDatabase(card, true);
+            if (isInDb == false)
             {
                 //if the card is a transform card, it needs to load both sides differently 
                 if (card.layout == "transform" ||

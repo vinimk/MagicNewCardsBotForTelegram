@@ -22,15 +22,15 @@ namespace MagicBot
         }
 
         #region Update Methods
-        public static void UpdateIsSent(Card card, Boolean isSent)
+        async public static Task UpdateIsSent(Card card, Boolean isSent)
         {
-            using(MySqlConnection conn = new MySqlConnection(_connectionString))
+            using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 if (conn.State != ConnectionState.Open)
                 {
-                    conn.Open();
+                    await conn.OpenAsync();
                 }
-                using(MySqlCommand cmd = conn.CreateCommand())
+                using (MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"UPDATE  ScryfallCard
                                         SET     IsCardSent =    @IsCardSent
@@ -40,17 +40,17 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@FullUrlWebSite",
-                            DbType = DbType.StringFixedLength,
-                            Value = card.FullUrlWebSite,
+                        DbType = DbType.StringFixedLength,
+                        Value = card.FullUrlWebSite,
                     });
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@IsCardSent",
-                            DbType = DbType.Boolean,
-                            Value = isSent,
+                        DbType = DbType.Boolean,
+                        Value = isSent,
                     });
 
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
                 if (conn.State == ConnectionState.Open)
                 {
@@ -63,17 +63,17 @@ namespace MagicBot
 
         #region Is In Methods
 
-        public static Boolean IsCardInDatabase(Card card, Boolean isSent)
+        async public static Task<Boolean> IsCardInDatabase(Card card, Boolean isSent)
         {
-            using(MySqlConnection conn = new MySqlConnection(_connectionString))
+            using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 Int64 count = -1;
                 if (conn.State != ConnectionState.Open)
                 {
-                    conn.Open();
+                    await conn.OpenAsync();
                 }
 
-                using(MySqlCommand cmd = conn.CreateCommand())
+                using (MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"SELECT  count(1)
                                             FROM ScryfallCard
@@ -85,15 +85,15 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@FullUrlWebSite",
-                            DbType = DbType.StringFixedLength,
-                            Value = card.FullUrlWebSite,
+                        DbType = DbType.StringFixedLength,
+                        Value = card.FullUrlWebSite,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@IsCardSent",
-                            DbType = DbType.Boolean,
-                            Value = isSent,
+                        DbType = DbType.Boolean,
+                        Value = isSent,
                     });
 
                     //dominaria workaround 
@@ -104,11 +104,11 @@ namespace MagicBot
                         Value = new DateTime(2018, 03, 11, 0, 0, 0), //the day that scryfall sent all the new card 
                     });
 
-                    using (DbDataReader reader = cmd.ExecuteReader())
+                    using (DbDataReader reader = await cmd.ExecuteReaderAsync())
                     {
-                        while (reader.Read())
+                        while (await reader.ReadAsync())
                         {
-                            count = reader.GetFieldValue<Int64>(0);
+                            count = await reader.GetFieldValueAsync<Int64>(0);
                         }
                     }
 
@@ -122,16 +122,16 @@ namespace MagicBot
             }
         }
 
-        public static Boolean IsChatInDatabase(Chat chat)
+        async public static Task<Boolean> IsChatInDatabase(Chat chat)
         {
-            using(MySqlConnection conn = new MySqlConnection(_connectionString))
+            using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 Int64 count = -1;
                 if (conn.State != ConnectionState.Open)
                 {
-                    conn.Open();
+                    await conn.OpenAsync();
                 }
-                using(MySqlCommand cmd = conn.CreateCommand())
+                using (MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"SELECT count(1)
                                             FROM Chat
@@ -141,15 +141,15 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@ChatId",
-                            DbType = DbType.Int64,
-                            Value = chat.Id,
+                        DbType = DbType.Int64,
+                        Value = chat.Id,
                     });
 
-                    using(DbDataReader reader = cmd.ExecuteReader())
+                    using (DbDataReader reader = await cmd.ExecuteReaderAsync())
                     {
-                        while (reader.Read())
+                        while (await reader.ReadAsync())
                         {
-                            count = reader.GetFieldValue<Int64>(0);
+                            count = await reader.GetFieldValueAsync<Int64>(0);
                         }
                     }
 
@@ -166,16 +166,16 @@ namespace MagicBot
 
         #region Get Methods
 
-        public static List<Chat> GetAllChats()
+        async public static Task<List<Chat>> GetAllChats()
         {
-            using(MySqlConnection conn = new MySqlConnection(_connectionString))
+            using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 List<Chat> retList = new List<Chat>();
                 if (conn.State != ConnectionState.Open)
                 {
-                    conn.Open();
+                    await conn.OpenAsync();
                 }
-                using(MySqlCommand cmd = conn.CreateCommand())
+                using (MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"SELECT  ChatId,
                                             ifNull(Title,''),
@@ -183,16 +183,18 @@ namespace MagicBot
                                             ifNull(Type,'')
                                             FROM Chat ";
 
-                    using(DbDataReader reader = cmd.ExecuteReader())
+                    using (DbDataReader reader = await cmd.ExecuteReaderAsync())
                     {
-                        while (reader.Read())
+                        while (await reader.ReadAsync())
                         {
-                            Chat chat = new Chat();
-                            chat.Id = reader.GetFieldValue<Int64>(0);
-                            chat.Title = reader.GetFieldValue<String>(1);
-                            chat.FirstName = reader.GetFieldValue<String>(2);
-                            ChatType type = (ChatType)Enum.Parse(typeof(ChatType), reader.GetFieldValue<String>(3));
-                            chat.Type = type;
+                            ChatType type = (ChatType)Enum.Parse(typeof(ChatType), await reader.GetFieldValueAsync<String>(3));
+                            Chat chat = new Chat
+                            {
+                                Id = await reader.GetFieldValueAsync<Int64>(0),
+                                Title = await reader.GetFieldValueAsync<String>(1),
+                                FirstName = await reader.GetFieldValueAsync<String>(2),
+                                Type = type,
+                            };
                             retList.Add(chat);
                         }
                     }
@@ -209,18 +211,18 @@ namespace MagicBot
 
         #region Insert Methods
 
-        public static void InsertScryfallCard(Card card)
+        async public static Task InsertScryfallCard(Card card)
         {
-            if (Database.IsCardInDatabase(card, false))
+            if (await IsCardInDatabase(card, false))
                 return;
 
-            using(MySqlConnection conn = new MySqlConnection(_connectionString))
+            using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 if (conn.State != ConnectionState.Open)
                 {
-                    conn.Open();
+                    await conn.OpenAsync();
                 }
-                using(MySqlCommand cmd = conn.CreateCommand())
+                using (MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"INSERT INTO ScryfallCard
                                                 (ScryfallCardId,
@@ -235,7 +237,7 @@ namespace MagicBot
                                                 )";
 
                     String id;
-                    if (card.GetType()== typeof(ScryfallCard))
+                    if (card.GetType() == typeof(ScryfallCard))
                     {
                         id = ((ScryfallCard)card).id;
                     }
@@ -247,32 +249,32 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@ScryfallCardId",
-                            DbType = DbType.StringFixedLength,
-                            Value = id,
+                        DbType = DbType.StringFixedLength,
+                        Value = id,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@Name",
-                            DbType = DbType.StringFixedLength,
-                            Value = card.Name,
+                        DbType = DbType.StringFixedLength,
+                        Value = card.Name,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@FullUrlWebSite",
-                            DbType = DbType.StringFixedLength,
-                            Value = card.FullUrlWebSite,
+                        DbType = DbType.StringFixedLength,
+                        Value = card.FullUrlWebSite,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@IsCardSent",
-                            DbType = DbType.Boolean,
-                            Value = false,
+                        DbType = DbType.Boolean,
+                        Value = false,
                     });
 
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
 
                 }
                 if (conn.State == ConnectionState.Open)
@@ -290,18 +292,18 @@ namespace MagicBot
         /// <param name="spoilName">name of the spoil(if any)</param>
         /// <param name="message">message of the log</param>
         /// <returns>ID of the saved log</returns>
-        public static Int32 InsertLog(String methodName, String spoilName, String message)
+        async public static Task<Int32> InsertLog(String methodName, String spoilName, String message)
         {
             try
             {
                 Int32 result = -1;
-                using(MySqlConnection conn = new MySqlConnection(_connectionString))
+                using (MySqlConnection conn = new MySqlConnection(_connectionString))
                 {
                     if (conn.State != ConnectionState.Open)
                     {
-                        conn.Open();
+                        await conn.OpenAsync();
                     }
-                    using(MySqlCommand cmd = conn.CreateCommand())
+                    using (MySqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"INSERT INTO Log
                                             (Message,
@@ -316,25 +318,25 @@ namespace MagicBot
                         cmd.Parameters.Add(new MySqlParameter()
                         {
                             ParameterName = "@Message",
-                                DbType = DbType.StringFixedLength,
-                                Value = message,
+                            DbType = DbType.StringFixedLength,
+                            Value = message,
                         });
 
                         cmd.Parameters.Add(new MySqlParameter()
                         {
                             ParameterName = "@Method",
-                                DbType = DbType.StringFixedLength,
-                                Value = methodName,
+                            DbType = DbType.StringFixedLength,
+                            Value = methodName,
                         });
 
                         cmd.Parameters.Add(new MySqlParameter()
                         {
                             ParameterName = "@SpoilName",
-                                DbType = DbType.StringFixedLength,
-                                Value = spoilName,
+                            DbType = DbType.StringFixedLength,
+                            Value = spoilName,
                         });
 
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
                         result = (Int32)cmd.LastInsertedId;
                     }
                     if (conn.State == ConnectionState.Open)
@@ -351,16 +353,16 @@ namespace MagicBot
             }
         }
 
-        public static Int64 InsertChat(Chat chat)
+        async public static Task<Int64> InsertChat(Chat chat)
         {
             Int64 ret = -1;
-            using(MySqlConnection conn = new MySqlConnection(_connectionString))
+            using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
                 if (conn.State != ConnectionState.Open)
                 {
-                    conn.Open();
+                    await conn.OpenAsync();
                 }
-                using(MySqlCommand cmd = conn.CreateCommand())
+                using (MySqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"INSERT INTO Chat
                                             (ChatId,
@@ -376,32 +378,32 @@ namespace MagicBot
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@ChatId",
-                            DbType = DbType.Int64,
-                            Value = chat.Id,
+                        DbType = DbType.Int64,
+                        Value = chat.Id,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@Title",
-                            DbType = DbType.StringFixedLength,
-                            Value = chat.Title,
+                        DbType = DbType.StringFixedLength,
+                        Value = chat.Title,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@FirstName",
-                            DbType = DbType.StringFixedLength,
-                            Value = chat.FirstName,
+                        DbType = DbType.StringFixedLength,
+                        Value = chat.FirstName,
                     });
 
                     cmd.Parameters.Add(new MySqlParameter()
                     {
                         ParameterName = "@Type",
-                            DbType = DbType.StringFixedLength,
-                            Value = chat.Type.ToString(),
+                        DbType = DbType.StringFixedLength,
+                        Value = chat.Type.ToString(),
                     });
 
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                     ret = (Int64)cmd.LastInsertedId;
                 }
                 if (conn.State == ConnectionState.Open)

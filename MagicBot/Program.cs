@@ -16,7 +16,7 @@ namespace MagicBot
 {
     public class Program
     {
-        static void Main(string[] args)
+        async public static  Task Main(string[] args)
         {
 
             try
@@ -26,12 +26,12 @@ namespace MagicBot
 
                 //first we update the list of chats
                 Program.WriteLine("Updating telegram chat list");
-                _telegramController.InitialUpdate();
+                await _telegramController.InitialUpdate();
                 _telegramController.HookUpdateEvent();
             }
             catch (Exception ex)
             {
-                Database.InsertLog("Updating telegram chat list", String.Empty, ex.ToString());
+                await Database.InsertLog("Updating telegram chat list", String.Empty, ex.ToString());
                 Program.WriteLine(ex.ToString());
             }
 
@@ -43,7 +43,7 @@ namespace MagicBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Program.WriteLine("Getting new cards");
-                    _mythicApiTasker.GetNewCards();
+                    await _mythicApiTasker.GetNewCards();
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
                     Program.WriteLine(String.Format("Going to sleep for {0} ms.", _timeInternalMS));
@@ -53,7 +53,7 @@ namespace MagicBot
                 {
                     try
                     {
-                        Database.InsertLog("Getting new cards", String.Empty, ex.ToString());
+                        await Database.InsertLog("Getting new cards", String.Empty, ex.ToString());
                         Program.WriteLine(ex.ToString());
                     }
                     catch (Exception ex2)
@@ -112,11 +112,11 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
                 try
                 {
-                    _telegramController.SendImageToAll(newItem);
+                    _telegramController.SendImageToAll(newItem).Wait();
                 }
                 catch (Exception ex)
                 {
-                    Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
+                    Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString()).Wait();
                     Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
                 }
@@ -124,12 +124,12 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
-                    _twitterController.PublishNewImage(newItem);
-                    Database.UpdateIsSent(newItem, true);
+                    _twitterController.PublishNewImage(newItem).Wait();
+                    Database.UpdateIsSent(newItem, true).Wait();
                 }
                 catch (Exception ex)
                 {
-                    Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
+                    Database.InsertLog("Twitter send image", newItem.Name, ex.ToString()).Wait();
                     Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
                 }

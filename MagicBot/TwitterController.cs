@@ -30,7 +30,7 @@ namespace MagicBot
         #endregion
 
         #region Public Methods
-        public void PublishNewImage(Card card)
+        async public Task PublishNewImage(Card card)
         {
 
             List<IMedia> lstImages = new List<IMedia>();
@@ -56,7 +56,7 @@ namespace MagicBot
                 }
             }
 
-            var tweet = Tweet.PublishTweet(card.GetTwitterText(), new Tweetinvi.Parameters.PublishTweetOptionalParameters
+            await TweetAsync.PublishTweet(card.GetTwitterText(), new Tweetinvi.Parameters.PublishTweetOptionalParameters
             {
                 Medias = lstImages
             });

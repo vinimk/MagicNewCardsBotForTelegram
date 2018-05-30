@@ -37,47 +37,48 @@ namespace MagicBot
         #endregion
 
         #region Public Methods
-        public void GetNewCards()
+        async public Task GetNewCards()
         {
-            CheckNewCards();
+            await CheckNewCards();
         }
         #endregion
 
         #region Private Methods
-        private void CheckNewCards()
+        async private Task CheckNewCards()
         {
             //get the aditional infos from the website
-            List<Card> lstCards = GetAvaliableCardsInWebSite();
+            List<Card> lstCards = await GetAvaliableCardsInWebSite();
             for (int i = 0; i < Database.MAX_CARDS; i++)
             {
                 Card card = lstCards[i];
-                CheckCard(card);
+                await CheckCard(card);
             }
         }
 
-        private void CheckCard(Card card)
+        async private Task CheckCard(Card card)
         {
             //check if the spoil is in the database
             //if is not in the database AND has NOT been sent
-            if (!Database.IsCardInDatabase(card, true))
+            var cardInDb = await Database.IsCardInDatabase(card, true);
+            if (cardInDb == false)
             {
-                card = GetAdditionalInfo(card);
+                card = await GetAdditionalInfo(card);
                 //adds in the database
-                Database.InsertScryfallCard(card);
+                await Database.InsertScryfallCard(card);
 
                 //fires the event to do stuffs with the new object
                 OnNewCard(card);
             }
         }
 
-        private Card GetAdditionalInfo(Card spoil)
+        async private Task<Card> GetAdditionalInfo(Card spoil)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
             {
                 //crawl the webpage to get this information
                 HtmlWeb htmlWeb = new HtmlWeb();
-                HtmlDocument html = htmlWeb.Load(spoil.FullUrlWebSite);
+                HtmlDocument html = await htmlWeb.LoadFromWebAsync(spoil.FullUrlWebSite);
 
                 try
                 {
@@ -169,14 +170,14 @@ namespace MagicBot
             return spoil;
         }
 
-        private List<Card> GetAvaliableCardsInWebSite()
+        async private Task<List<Card>> GetAvaliableCardsInWebSite()
         {
             List<Card> lstCards = new List<Card>();
             try
             {
                 //loads the website
                 HtmlWeb htmlWeb = new HtmlWeb();
-                HtmlDocument doc = htmlWeb.Load(String.Format("{0}{1}", _websiteUrl, _pathNewCards));
+                HtmlDocument doc = await htmlWeb.LoadFromWebAsync(String.Format("{0}{1}", _websiteUrl, _pathNewCards));
 
                 //all the cards are a a href so we get all of that
                 HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//img");
@@ -200,7 +201,7 @@ namespace MagicBot
             }
             catch (Exception ex)
             {
-                Database.InsertLog("Error crawling the main page", String.Empty, ex.ToString());
+                Database.InsertLog("Error crawling the main page", String.Empty, ex.ToString()).Wait();
                 Program.WriteLine("Error crawling the main page");
                 Program.WriteLine(ex.Message);
                 Program.WriteLine(ex.StackTrace);

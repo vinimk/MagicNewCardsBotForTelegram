@@ -29,15 +29,15 @@ namespace MagicBot
         #endregion
 
         #region Public Methods
-        public void InitialUpdate()
+        async public Task InitialUpdate()
         {
-            GetInitialUpdateEvents();
+            await GetInitialUpdateEvents();
         }
 
-        public void SendImageToAll(Card card)
+        async public Task SendImageToAll(Card card)
         {
             //goes trough all the chats and send a message for each one
-            List<Chat> lstChat = Database.GetAllChats();
+            List<Chat> lstChat = await Database.GetAllChats();
             // List<Chat> lstChat = new List<Chat>(){
             //     new Chat()
             //     {
@@ -46,7 +46,7 @@ namespace MagicBot
             // };
             foreach (Chat chat in lstChat)
             {
-                SendSpoilToChat(card, chat);
+                await SendSpoilToChat(card, chat);
             }
         }
 
@@ -62,7 +62,7 @@ namespace MagicBot
 
         #region Private Methods
 
-        private void SendSpoilToChat(Card card, Chat chat)
+        async private Task SendSpoilToChat(Card card, Chat chat)
         {
             try
             {
@@ -84,23 +84,20 @@ namespace MagicBot
                     //try to send directly, if it fails we download then upload it
                     try
                     {
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, new InputOnlineFile(card.ImageUrl), messageText, replyToMessageId: replyToMessage);
-                        task.Wait();
-                        replyToMessage = task.Result.MessageId;
+                        var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(card.ImageUrl), messageText, replyToMessageId: replyToMessage);
+                        replyToMessage = message.MessageId;
                     }
                     catch
                     {
                         Stream stream = Program.GetImageFromUrl(card.ImageUrl);
-                        Task<Message> task = _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, card.Name + ".PNG"), messageText, replyToMessageId: replyToMessage);
-                        task.Wait();
-                        replyToMessage = task.Result.MessageId;
+                        var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, card.Name + ".PNG"), messageText, replyToMessageId: replyToMessage);
+                        replyToMessage = message.MessageId;
                     }
 
                     if (isTextToBig)
                     {
-                        Task<Message> task = _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
-                        task.Wait();
-                        replyToMessage = task.Result.MessageId;
+                        var message = await _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
+                        replyToMessage = message.MessageId;
                     }
 
                 }
@@ -125,23 +122,20 @@ namespace MagicBot
                         //try to send directly, if it fails we download then upload it
                         try
                         {
-                            Task<Message> task = _botClient.SendPhotoAsync(chat, new InputOnlineFile(extraSide.ImageUrl), messageText, replyToMessageId: replyToMessage);
-                            task.Wait();
-                            replyToMessage = task.Result.MessageId;
+                            var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(extraSide.ImageUrl), messageText, replyToMessageId: replyToMessage);
+                            replyToMessage = message.MessageId;
                         }
                         catch
                         {
                             Stream stream = Program.GetImageFromUrl(extraSide.ImageUrl);
-                            Task<Message> task = _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, extraSide.Name + ".PNG"), messageText, replyToMessageId: replyToMessage);
-                            task.Wait();
-                            replyToMessage = task.Result.MessageId;
+                            var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, extraSide.Name + ".PNG"), messageText, replyToMessageId: replyToMessage);
+                            replyToMessage = message.MessageId;
                         }
 
                         if (isTextToBig)
                         {
-                            Task<Message> task = _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
-                            task.Wait();
-                            replyToMessage = task.Result.MessageId;
+                            var message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
+                            replyToMessage = message.MessageId;
                         }
                     }
 
@@ -162,19 +156,17 @@ namespace MagicBot
                 }
                 else
                 {
-                    Database.InsertLog("Telegram send message", card.Name, ex.ToString());
+                    await Database.InsertLog("Telegram send message", card.Name, ex.ToString());
                     Program.WriteLine(ex.Message);
                     Program.WriteLine(ex.StackTrace);
                 }
             }
         }
 
-        private void GetInitialUpdateEvents()
+        async private Task GetInitialUpdateEvents()
         {
             //get all updates
-            Task<Update[]> taskTelegramUpdates = _botClient.GetUpdatesAsync(_offset);
-            taskTelegramUpdates.Wait();
-            Update[] updates = taskTelegramUpdates.Result;
+            Update[] updates = await _botClient.GetUpdatesAsync(_offset);
 
             if (updates.Count()> 0)
             {
@@ -204,23 +196,24 @@ namespace MagicBot
                             update.Message.Chat != null)
                         {
                             //call the method to see if it is needed to add it to the database
-                            AddIfNeeded(update.Message.Chat);
+                            await AddIfNeeded(update.Message.Chat);
                         }
                     }
                 }
                 //recursive call for offset checking
-                GetInitialUpdateEvents();
+                await GetInitialUpdateEvents();
             }
         }
 
-        private void AddIfNeeded(Chat chat)
+        async private Task AddIfNeeded(Chat chat)
         {
             //query the list to see if the chat is already in the database
-            if (!Database.IsChatInDatabase(chat))
+            bool isInDb = await Database.IsChatInDatabase(chat);
+            if (isInDb == false)
             {
                 //if it isn't adds it
-                Database.InsertChat(chat);
-                _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable").Wait();
+                await Database.InsertChat(chat);
+                await _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable");
                 Program.WriteLine(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
             }
         }
@@ -235,7 +228,7 @@ namespace MagicBot
                 args.Update.Message.Chat != null)
             {
                 Program.WriteLine(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
-                AddIfNeeded(args.Update.Message.Chat);
+                AddIfNeeded(args.Update.Message.Chat).Wait();
                 _offset = args.Update.Id;
             }
         }
