@@ -43,7 +43,7 @@ namespace MagicBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Program.WriteLine("Getting new cards");
-                    await _mythicApiTasker.GetNewCards();
+                    await _mtgSalvationTasker.GetNewCards();
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
                     Program.WriteLine(String.Format("Going to sleep for {0} ms.", _timeInternalMS));
@@ -67,7 +67,8 @@ namespace MagicBot
         }
 
         #region Definitions
-        private static MythicApiTasker _mythicApiTasker;
+        //private static MythicApiTasker _mythicApiTasker;
+        private static MTGSalvationTasker _mtgSalvationTasker;
         //private static ScryfallApiTasker _scryfallApiTasker;
         private static TelegramController _telegramController;
         private static TwitterController _twitterController;
@@ -89,8 +90,11 @@ namespace MagicBot
 
             Database.SetConnectionString(config["ConnectionStringMySQL"]);
 
-            _mythicApiTasker = new MythicApiTasker(config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"]);
-            _mythicApiTasker.eventNewcard += EventNewcard;
+            _mtgSalvationTasker = new MTGSalvationTasker();
+            _mtgSalvationTasker.eventNewcard += EventNewcard;
+
+            //_mythicApiTasker = new MythicApiTasker(config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"]);
+            //_mythicApiTasker.eventNewcard += EventNewcard;
 
             // _scryfallApiTasker = new ScryfallApiTasker();
             // _scryfallApiTasker.eventNewcard += EventNewcard;

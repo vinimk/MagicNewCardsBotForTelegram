@@ -77,6 +77,17 @@ namespace MagicBot
             get;
             set;
         }
+        public String FullInfo
+        {
+            get;
+            set;
+        }
+
+        public String Set
+        {
+            get;
+            set;
+        }
 
         #region Methods
 
