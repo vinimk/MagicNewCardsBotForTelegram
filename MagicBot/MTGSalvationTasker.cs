@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using CodeHollow.FeedReader;
 using System.Text.RegularExpressions;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace MagicBot
 {
@@ -86,11 +88,36 @@ namespace MagicBot
             if (cardInDb == false)
             {
                 card = await GetAdditionalInfo(card);
-                //adds in the database
-                await Database.InsertScryfallCard(card);
+                if (await checkImage(card))
+                {
+                    //adds in the database
+                    await Database.InsertScryfallCard(card);
 
-                //fires the event to do stuffs with the new object
-                OnNewCard(card);
+                    //fires the event to do stuffs with the new object
+                    OnNewCard(card);
+                }
+            }
+        }
+
+        async private Task<bool> checkImage(Card card)
+        {
+            try
+            {
+                using (var webClient = new WebClient())
+                {
+                    var downloadedData = await webClient.DownloadDataTaskAsync(card.ImageUrl);
+                    using (Image<Rgba32> image = Image.Load(downloadedData))
+                    {
+                        if (image.Width > 100 || image.Height > 100)
+                            return true;
+                        else
+                            return false;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -106,7 +133,7 @@ namespace MagicBot
 
                 try
                 {
-                    card.ImageUrl = WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("//meta[@property='og:image']")?.Attributes["content"]?.Value);
+                    card.ImageUrl = WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("//img[@class='card-spoiler-image']")?.Attributes["src"]?.Value);
                 }
                 catch
                 { }
@@ -134,7 +161,7 @@ namespace MagicBot
 
                 try
                 {
-                    card.Flavor = WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("//div[@class='t-spoiler-flavor']")?.InnerText).Trim();
+                    card.Flavor = WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("//div[@class='t-spoiler-flavor']")?.InnerText.Trim());
                 }
                 catch
                 { }
