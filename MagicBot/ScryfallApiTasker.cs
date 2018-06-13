@@ -27,7 +27,7 @@ namespace MagicBot
         #region Private Methods
         async private Task CheckNewCards()
         {
-            String jsonMsg = GetFromAPI();
+            String jsonMsg = await GetFromAPI();
 
             if (!String.IsNullOrEmpty(jsonMsg))
             {
@@ -133,13 +133,13 @@ namespace MagicBot
                 }
 
                 //adds in the database
-                Database.InsertScryfallCard(card);
+                await Database.InsertScryfallCard(card);
                 //fires the event to do stuff with it
                 OnNewCard(card);
             }
         }
 
-        private String GetFromAPI()
+        private async Task<String> GetFromAPI()
         {
             try
             {
@@ -148,14 +148,14 @@ namespace MagicBot
                 httpWebRequest.ContentType = "application/json; charset=utf-8";
                 httpWebRequest.Accept = "application/json";
                 httpWebRequest.Method = WebRequestMethods.Http.Get;
-                using(var streamReader = new StreamReader(((HttpWebResponse)httpWebRequest.GetResponse()).GetResponseStream()))
+                using (var streamReader = new StreamReader(((HttpWebResponse)httpWebRequest.GetResponse()).GetResponseStream()))
                 {
                     return streamReader.ReadToEnd();
                 }
             }
             catch (Exception ex)
             {
-                Database.InsertLog("Scryfall", String.Empty, ex.ToString());
+                await Database.InsertLog("Scryfall", String.Empty, ex.ToString());
                 throw new Exception("API Problem", ex);
             }
         }
