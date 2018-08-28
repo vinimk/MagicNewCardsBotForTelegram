@@ -166,6 +166,45 @@ namespace MagicBot
 
         #region Get Methods
 
+        async public static Task<List<Set>> GetAllCrawlableSets()
+        {
+            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            {
+                List<Set> retList = new List<Set>();
+                if (conn.State != ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                }
+                using (MySqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT  SetID,
+                                            ifNull(SetURL,''),
+                                            ifNull(SetName,'')
+                                            FROM Sets 
+                                            WHERE ShouldCrawl = 1 ";
+
+                    using (DbDataReader reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            Set set = new Set
+                            {
+                                ID = await reader.GetFieldValueAsync<Int64>(0),
+                                URL = await reader.GetFieldValueAsync<String>(1),
+                                Name = await reader.GetFieldValueAsync<String>(2),
+                            };
+                            retList.Add(set);
+                        }
+                    }
+                }
+                if (conn.State == ConnectionState.Open)
+                {
+                    conn.Close();
+                }
+                return retList;
+            }
+        }
+
         async public static Task<List<Chat>> GetAllChats()
         {
             using (MySqlConnection conn = new MySqlConnection(_connectionString))
