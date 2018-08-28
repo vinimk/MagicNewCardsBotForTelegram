@@ -260,3 +260,4 @@ paket-files/
 __pycache__/
 *.pyc
 MagicBot/appsettings.json
+MagicBot/appsettings.json

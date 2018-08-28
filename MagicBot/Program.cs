@@ -120,7 +120,7 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
                 try
                 {
-                    //_telegramController.SendImageToAll(newItem).Wait();
+                    _telegramController.SendImageToAll(newItem).Wait();
                 }
                 catch (Exception ex)
                 {
@@ -132,7 +132,7 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
-                    //_twitterController.PublishNewImage(newItem).Wait();
+                    _twitterController.PublishNewImage(newItem).Wait();
                     Database.UpdateIsSent(newItem, true).Wait();
                 }
                 catch (Exception ex)
