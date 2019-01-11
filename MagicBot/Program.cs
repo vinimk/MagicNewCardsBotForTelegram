@@ -120,7 +120,7 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
                 try
                 {
-                    //_telegramController.SendImageToAll(newItem).Wait();
+                    _telegramController.SendImageToAll(newItem).Wait();
                 }
                 catch (Exception ex)
                 {
