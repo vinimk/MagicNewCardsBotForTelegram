@@ -40,34 +40,34 @@ namespace MagicBot
             var sets = await Database.GetAllCrawlableSets();
             foreach (var set in sets)
             {
-            try
-            {
-                //loads the website
-                HtmlWeb htmlWeb = new HtmlWeb();
-                HtmlDocument doc = await htmlWeb.LoadFromWebAsync(set.URL);
-
-                var nodes = doc.DocumentNode.SelectNodes(".//div[@class='spoiler-set-card']");
-                foreach(var node in nodes)
+                try
                 {
-                    Card card = new Card();
-                    card.Name = node.SelectSingleNode(".//a[@rel='bookmark']")?.Attributes["title"]?.Value;
-                    card.ImageUrl = node.SelectSingleNode(".//img[contains(@class,'attachment-set-card')]")?.Attributes["src"]?.Value;
-                    await CheckCard(card);
-                }
-                
-            }
-                
-            
-            catch (Exception ex)
-            {
-                Database.InsertLog("Error crawling page: " + set.URL, String.Empty, ex.ToString()).Wait();
-                Program.WriteLine("Error crawling the main page");
-                Program.WriteLine(ex.Message);
-                Program.WriteLine(ex.StackTrace);
-            }
-        }
+                    //loads the website
+                    HtmlWeb htmlWeb = new HtmlWeb();
+                    HtmlDocument doc = await htmlWeb.LoadFromWebAsync(set.URL);
 
-           
+                    var nodes = doc.DocumentNode.SelectNodes(".//div[@class='spoiler-set-card']");
+                    foreach (var node in nodes)
+                    {
+                        Card card = new Card();
+                        card.Name = node.SelectSingleNode(".//a[@rel='bookmark']")?.Attributes["title"]?.Value;
+                        card.ImageUrl = node.SelectSingleNode(".//img[contains(@class,'attachment-set-card')]")?.Attributes["src"]?.Value;
+                        await CheckCard(card);
+                    }
+
+                }
+
+
+                catch (Exception ex)
+                {
+                    Database.InsertLog("Error crawling page: " + set.URL, String.Empty, ex.ToString()).Wait();
+                    Program.WriteLine("Error crawling the main page");
+                    Program.WriteLine(ex.Message);
+                    Program.WriteLine(ex.StackTrace);
+                }
+            }
+
+
 
         }
 

@@ -16,7 +16,7 @@ namespace MagicBot
             set;
         }
 
-        public SpoilItem(): base()
+        public SpoilItem() : base()
         { }
     }
 }

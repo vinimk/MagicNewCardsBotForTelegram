@@ -37,7 +37,7 @@ namespace MagicBot
             set;
         }
 
-        public ScryfallCard(): base()
+        public ScryfallCard() : base()
         { }
     }
 }

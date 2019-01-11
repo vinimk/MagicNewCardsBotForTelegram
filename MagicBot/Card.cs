@@ -129,7 +129,7 @@ namespace MagicBot
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Power)|| (!String.IsNullOrEmpty(Toughness)))
+            if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
             {
                 sb.AppendFormat(" ({0}/{1})", Power, Toughness);
                 sb.Append(lineBreak);
@@ -182,7 +182,7 @@ namespace MagicBot
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Power)|| (!String.IsNullOrEmpty(Toughness)))
+            if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
             {
                 sb.Append(String.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
                 sb.Append(lineBreak);
