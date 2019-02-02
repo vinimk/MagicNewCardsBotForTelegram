@@ -47,7 +47,7 @@ namespace MagicBot
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
                     Program.WriteLine(String.Format("Going to sleep for {0} ms.", _timeInternalMS));
-                    Thread.Sleep(_timeInternalMS);
+                    await Task.Delay(_timeInternalMS);
                 }
                 catch (Exception ex)
                 {
@@ -61,7 +61,7 @@ namespace MagicBot
                         Console.WriteLine("Exception in catch, sad");
                         Console.WriteLine(ex2.ToString());
                     }
-                    Thread.Sleep(_timeInternalMS);
+                    await Task.Delay(_timeInternalMS);
                 }
             }
         }
