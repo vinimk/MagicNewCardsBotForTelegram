@@ -126,6 +126,7 @@ namespace MagicBot
             if (newItem.ImageUrl != null)
             {
                 Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
+                await Database.UpdateIsSent(newItem, true);
                 try
                 {
                     await TelegramController.SendImageToAll(newItem);
@@ -141,7 +142,6 @@ namespace MagicBot
                 try
                 {
                     await TwitterController.PublishNewImage(newItem);
-                    await Database.UpdateIsSent(newItem, true);
                 }
                 catch (Exception ex)
                 {
