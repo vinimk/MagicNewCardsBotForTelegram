@@ -27,12 +27,13 @@ namespace MagicBot
         #endregion
 
         #region Events
-        public delegate void NewCard(object sender, Card newItem);
+        public delegate Task NewCard(object sender, Card e);
+        //public delegate void NewCard(object sender, Card newItem);
         public event NewCard eventNewcard;
-        protected virtual void OnNewCard(Card args)
+        async protected virtual void OnNewCard(Card args)
         {
             if (eventNewcard != null)
-                eventNewcard(this, args);
+                await eventNewcard(this, args);
         }
         #endregion
 
@@ -48,7 +49,7 @@ namespace MagicBot
         {
             //get the aditional infos from the website
             List<Card> lstCards = await GetAvaliableCardsInWebSite();
-            for (int i = 0; i < Database.MAX_CARDS; i++)
+            for (int i = 0; i < Database.MAX_CARDS && i < lstCards.Count; i++)
             {
                 Card card = lstCards[i];
                 await CheckCard(card);

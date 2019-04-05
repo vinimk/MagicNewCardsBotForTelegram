@@ -36,23 +36,19 @@ namespace MagicBot
             List<IMedia> lstImages = new List<IMedia>();
 
             //loads the image and sends it
-            using (System.IO.Stream imageStream = Program.GetImageFromUrl(card.ImageUrl))
-            {
-                byte[] byteImage = Program.ReadFully(imageStream);
-                IMedia mainImage = Upload.UploadBinary(byteImage);
-                lstImages.Add(mainImage);
-            }
+
+            byte[] byteImage = await Program.GetImageFromUrlByteArrayAsync(card.ImageUrl);
+            IMedia mainImage = Upload.UploadBinary(byteImage);
+            lstImages.Add(mainImage);
+
 
             if (card.ExtraSides != null && card.ExtraSides.Count > 0)
             {
                 foreach (Card extraCard in card.ExtraSides)
                 {
-                    using (System.IO.Stream extraImageStream = Program.GetImageFromUrl(extraCard.ImageUrl))
-                    {
-                        byte[] extraByteImage = Program.ReadFully(extraImageStream);
-                        IMedia extraImage = Upload.UploadBinary(extraByteImage);
-                        lstImages.Add(extraImage);
-                    }
+                    byte[] extraByteImage = await Program.GetImageFromUrlByteArrayAsync(extraCard.ImageUrl);
+                    IMedia extraImage = Upload.UploadBinary(extraByteImage);
+                    lstImages.Add(extraImage);
                 }
             }
 

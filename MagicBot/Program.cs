@@ -26,8 +26,8 @@ namespace MagicBot
 
                 //first we update the list of chats
                 Program.WriteLine("Updating telegram chat list");
-                await _telegramController.InitialUpdate();
-                _telegramController.HookUpdateEvent();
+                await TelegramController.InitialUpdate();
+                TelegramController.HookUpdateEvent();
             }
             catch (Exception ex)
             {
@@ -43,11 +43,11 @@ namespace MagicBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Program.WriteLine("Getting new cards");
-                    await _mythicApiTasker.GetNewCards();
+                    await MythicApiTasker.GetNewCards();
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
-                    Program.WriteLine(String.Format("Going to sleep for {0} ms.", _timeInternalMS));
-                    await Task.Delay(_timeInternalMS);
+                    Program.WriteLine(String.Format("Going to sleep for {0} ms.", TimeInternalMS));
+                    await Task.Delay(TimeInternalMS);
                 }
                 catch (Exception ex)
                 {
@@ -61,7 +61,7 @@ namespace MagicBot
                         Console.WriteLine("Exception in catch, sad");
                         Console.WriteLine(ex2.ToString());
                     }
-                    await Task.Delay(_timeInternalMS);
+                    await Task.Delay(TimeInternalMS);
                 }
             }
         }
@@ -74,6 +74,11 @@ namespace MagicBot
         private static TelegramController _telegramController;
         private static TwitterController _twitterController;
         private static int _timeInternalMS;
+
+        public static int TimeInternalMS { get => _timeInternalMS; set => _timeInternalMS = value; }
+        public static TwitterController TwitterController { get => _twitterController; set => _twitterController = value; }
+        public static TelegramController TelegramController { get => _telegramController; set => _telegramController = value; }
+        public static MythicApiTasker MythicApiTasker { get => _mythicApiTasker; set => _mythicApiTasker = value; }
         #endregion
 
         #region Init configs
@@ -87,15 +92,18 @@ namespace MagicBot
 
             var config = builder.Build();
 
-            _timeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
+            TimeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
 
             Database.SetConnectionString(config["ConnectionStringMySQL"]);
 
             // _mtgSalvationTasker = new MTGSalvationTasker();
             // _mtgSalvationTasker.eventNewcard += EventNewcard;
 
-            _mythicApiTasker = new MythicApiTasker(config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"]);
-            _mythicApiTasker.eventNewcard += EventNewcard;
+            MythicApiTasker = new MythicApiTasker(config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"]);
+            MythicApiTasker.eventNewcard += async (s, e) =>
+            {
+                await EventNewcardAsync(s, e);
+            };
 
             //_mtgVisualApiTasker = new MTGVisualTasker();
             //_mtgVisualApiTasker.eventNewcard += EventNewcard;
@@ -103,9 +111,9 @@ namespace MagicBot
             // _scryfallApiTasker = new ScryfallApiTasker();
             // _scryfallApiTasker.eventNewcard += EventNewcard;
 
-            _telegramController = new TelegramController(config["TelegramBotApiKey"]);
+            TelegramController = new TelegramController(config["TelegramBotApiKey"]);
 
-            _twitterController = new TwitterController(config["TwitterConsumerKey"], config["TwitterConsumerSecret"], config["TwitterAcessToken"], config["TwitterAcessTokenSecret"]);
+            TwitterController = new TwitterController(config["TwitterConsumerKey"], config["TwitterConsumerSecret"], config["TwitterAcessToken"], config["TwitterAcessTokenSecret"]);
 
         }
 
@@ -113,18 +121,18 @@ namespace MagicBot
 
         #region Events Handlers
 
-        private static void EventNewcard(object sender, Card newItem)
+        async private static Task EventNewcardAsync(object sender, Card newItem)
         {
             if (newItem.ImageUrl != null)
             {
                 Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
                 try
                 {
-                    _telegramController.SendImageToAll(newItem).Wait();
+                    await TelegramController.SendImageToAll(newItem);
                 }
                 catch (Exception ex)
                 {
-                    Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString()).Wait();
+                    await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
                     Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
                 }
@@ -132,12 +140,12 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
-                    _twitterController.PublishNewImage(newItem).Wait();
-                    Database.UpdateIsSent(newItem, true).Wait();
+                    //await TwitterController.PublishNewImage(newItem);
+                    await Database.UpdateIsSent(newItem, true);
                 }
                 catch (Exception ex)
                 {
-                    Database.InsertLog("Twitter send image", newItem.Name, ex.ToString()).Wait();
+                    await Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
                     Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
                 }
@@ -146,27 +154,20 @@ namespace MagicBot
         #endregion
 
         #region Helper Functions
-        public static Stream GetImageFromUrl(String url)
+        async public static Task<Stream> GetImageFromUrlStreamAsync(String url)
         {
             //do a webrequest to get the image
-            HttpWebRequest imageRequest = (HttpWebRequest)WebRequest.Create(url);
-            HttpWebResponse imageResponse = (HttpWebResponse)imageRequest.GetResponse();
-            Stream imageStream = imageResponse.GetResponseStream();
-
-            return imageStream;
+            using (HttpClient client = new HttpClient())
+            {
+                return await client.GetStreamAsync(url);
+            }
         }
 
-        public static byte[] ReadFully(Stream input)
+        async public static Task<byte[]> GetImageFromUrlByteArrayAsync(String url)
         {
-            byte[] buffer = new byte[16 * 1024];
-            using (MemoryStream ms = new MemoryStream())
+            using (HttpClient client = new HttpClient())
             {
-                int read;
-                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    ms.Write(buffer, 0, read);
-                }
-                return ms.ToArray();
+                return await _httpClient.GetByteArrayAsync(url);
             }
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Telegram.Bot.Args;
 using Telegram.Bot.Exceptions;
@@ -81,22 +82,14 @@ namespace MagicBot
                         messageText = card.GetTelegramText();
                     }
 
-                    //try to send directly, if it fails we download then upload it
-                    try
-                    {
-                        var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(card.ImageUrl), messageText, replyToMessageId: replyToMessage);
-                        replyToMessage = message.MessageId;
-                    }
-                    catch
-                    {
-                        Stream stream = Program.GetImageFromUrl(card.ImageUrl);
-                        var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, card.Name + ".PNG"), messageText, replyToMessageId: replyToMessage);
-                        replyToMessage = message.MessageId;
-                    }
+                    Stream stream = await Program.GetImageFromUrlStreamAsync(card.ImageUrl);
+                    var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, WebUtility.UrlEncode(card.Name.Trim() + ".jpg")), messageText, replyToMessageId: replyToMessage);
+                    replyToMessage = message.MessageId;
+
 
                     if (isTextToBig)
                     {
-                        var message = await _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
+                        message = await _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
                         replyToMessage = message.MessageId;
                     }
 
@@ -120,21 +113,14 @@ namespace MagicBot
                         }
 
                         //try to send directly, if it fails we download then upload it
-                        try
-                        {
-                            var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(extraSide.ImageUrl), messageText, replyToMessageId: replyToMessage);
-                            replyToMessage = message.MessageId;
-                        }
-                        catch
-                        {
-                            Stream stream = Program.GetImageFromUrl(extraSide.ImageUrl);
-                            var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, extraSide.Name + ".PNG"), messageText, replyToMessageId: replyToMessage);
-                            replyToMessage = message.MessageId;
-                        }
+                        Stream stream = await Program.GetImageFromUrlStreamAsync(extraSide.ImageUrl);
+                        var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, WebUtility.UrlEncode(extraSide.Name.Trim() + ".jpg")), messageText, replyToMessageId: replyToMessage);
+                        replyToMessage = message.MessageId;
+
 
                         if (isTextToBig)
                         {
-                            var message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
+                            message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
                             replyToMessage = message.MessageId;
                         }
                     }
