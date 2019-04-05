@@ -167,7 +167,7 @@ namespace MagicBot
         {
             using (HttpClient client = new HttpClient())
             {
-                return await _httpClient.GetByteArrayAsync(url);
+                return await client.GetByteArrayAsync(url);
             }
         }
 
