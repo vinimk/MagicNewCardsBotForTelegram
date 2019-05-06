@@ -15,16 +15,16 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CodeHollow.FeedReader" Version="1.1.6" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.1" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.2.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
-    <PackageReference Include="MySqlConnector" Version="0.51.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="MySqlConnector" Version="0.53.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0006" />
-    <PackageReference Include="Telegram.Bot" Version="14.10.0" />
+    <PackageReference Include="Telegram.Bot" Version="14.11.0" />
     <PackageReference Include="TweetinviAPI" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup>
