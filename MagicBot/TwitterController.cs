@@ -37,7 +37,7 @@ namespace MagicBot
 
             //loads the image and sends it
 
-            byte[] byteImage = await Program.GetImageFromUrlByteArrayAsync(card.ImageUrl);
+            byte[] byteImage = await Program.GetByteArrayFromUrlAsync(card.ImageUrl);
             IMedia mainImage = Upload.UploadBinary(byteImage);
             lstImages.Add(mainImage);
 
@@ -46,7 +46,7 @@ namespace MagicBot
             {
                 foreach (Card extraCard in card.ExtraSides)
                 {
-                    byte[] extraByteImage = await Program.GetImageFromUrlByteArrayAsync(extraCard.ImageUrl);
+                    byte[] extraByteImage = await Program.GetByteArrayFromUrlAsync(extraCard.ImageUrl);
                     IMedia extraImage = Upload.UploadBinary(extraByteImage);
                     lstImages.Add(extraImage);
                 }

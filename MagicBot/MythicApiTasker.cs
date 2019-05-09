@@ -79,7 +79,7 @@ namespace MagicBot
             {
                 HtmlDocument html = new HtmlDocument();
                 //crawl the webpage to get this information
-                using (Stream stream = await Program.GetImageFromUrlStreamAsync(spoil.FullUrlWebSite))
+                using (Stream stream = await Program.GetStreamFromUrlAsync(spoil.FullUrlWebSite))
                 {
                     html.Load(stream);
                 }
@@ -185,7 +185,7 @@ namespace MagicBot
 
                 HtmlDocument doc = new HtmlDocument();
                 //crawl the webpage to get this information
-                using (Stream stream = await Program.GetImageFromUrlStreamAsync(String.Format("{0}{1}", _websiteUrl, _pathNewCards)))
+                using (Stream stream = await Program.GetStreamFromUrlAsync(String.Format("{0}{1}", _websiteUrl, _pathNewCards)))
                 {
                     doc.Load(stream);
                 }

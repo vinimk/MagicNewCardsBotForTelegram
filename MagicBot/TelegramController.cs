@@ -76,7 +76,7 @@ namespace MagicBot
                     messageText = card.GetTelegramText();
                 }
 
-                using (Stream stream = await Program.GetImageFromUrlStreamAsync(card.ImageUrl))
+                using (Stream stream = await Program.GetStreamFromUrlAsync(card.ImageUrl))
                 {
                     var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream), messageText);
                     replyToMessage = message.MessageId;
@@ -106,7 +106,7 @@ namespace MagicBot
                         }
 
                         //try to send directly, if it fails we download then upload it
-                        using (Stream stream = await Program.GetImageFromUrlStreamAsync(extraSide.ImageUrl))
+                        using (Stream stream = await Program.GetStreamFromUrlAsync(extraSide.ImageUrl))
                         {
                             var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream), messageText, replyToMessageId: replyToMessage);
                             replyToMessage = message.MessageId;

@@ -154,7 +154,7 @@ namespace MagicBot
         #endregion
 
         #region Helper Functions
-        async public static Task<Stream> GetImageFromUrlStreamAsync(String url)
+        async public static Task<Stream> GetStreamFromUrlAsync(string url)
         {
             //do a webrequest to get the image
             using (HttpClient client = new HttpClient())
@@ -163,7 +163,7 @@ namespace MagicBot
             }
         }
 
-        async public static Task<byte[]> GetImageFromUrlByteArrayAsync(String url)
+        async public static Task<byte[]> GetByteArrayFromUrlAsync(String url)
         {
             using (HttpClient client = new HttpClient())
             {
