@@ -12,10 +12,10 @@ namespace MagicBot
     public class TwitterController
     {
         #region Definitions
-        private String _consumerKey;
-        private String _consumerSecret;
-        private String _acessToken;
-        private String _acessTokenSecret;
+        private readonly string _consumerKey;
+        private readonly string _consumerSecret;
+        private readonly string _acessToken;
+        private readonly string _acessTokenSecret;
         #endregion
 
         #region Constructor

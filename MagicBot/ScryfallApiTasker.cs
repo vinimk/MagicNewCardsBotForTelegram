@@ -34,7 +34,7 @@ namespace MagicBot
                 //deserialization of the objects
                 ScryfallApiResponse response = JsonConvert.DeserializeObject<ScryfallApiResponse>(jsonMsg);
 
-                foreach (ScryfallCard card in response.data)
+                foreach (ScryfallCard card in response.Data)
                 {
                     await CheckCard(card);
                 }
@@ -112,16 +112,17 @@ namespace MagicBot
                         }
                         else
                         {
-                            ScryfallCard extraCard = new ScryfallCard();
-
-                            extraCard.Name = name;
-                            extraCard.Type = type_line;
-                            extraCard.Text = oracle_text;
-                            extraCard.ManaCost = mana_cost;
-                            extraCard.Power = power;
-                            extraCard.Toughness = toughness;
-                            extraCard.Flavor = flavor_text;
-                            extraCard.ImageUrl = image_url;
+                            ScryfallCard extraCard = new ScryfallCard
+                            {
+                                Name = name,
+                                Type = type_line,
+                                Text = oracle_text,
+                                ManaCost = mana_cost,
+                                Power = power,
+                                Toughness = toughness,
+                                Flavor = flavor_text,
+                                ImageUrl = image_url
+                            };
 
                             card.ExtraSides.Add(extraCard);
                         }
@@ -164,11 +165,10 @@ namespace MagicBot
 
         #region Events
         public delegate void NewCard(object sender, Card newItem);
-        public event NewCard eventNewcard;
+        public event NewCard EventNewcard;
         protected virtual void OnNewCard(Card args)
         {
-            if (eventNewcard != null)
-                eventNewcard(this, args);
+            EventNewcard?.Invoke(this, args);
         }
         #endregion
     }

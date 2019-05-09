@@ -14,8 +14,8 @@ namespace MagicBot
     public class MythicApiTasker
     {
         #region Definitions
-        private String _websiteUrl;
-        private String _pathNewCards;
+        private readonly string _websiteUrl;
+        private readonly string _pathNewCards;
         #endregion
 
         #region Constructors
@@ -29,11 +29,11 @@ namespace MagicBot
         #region Events
         public delegate Task NewCard(object sender, Card e);
         //public delegate void NewCard(object sender, Card newItem);
-        public event NewCard eventNewcard;
+        public event NewCard EventNewcard;
         async protected virtual void OnNewCard(Card args)
         {
-            if (eventNewcard != null)
-                await eventNewcard(this, args);
+            if (EventNewcard != null)
+                await EventNewcard(this, args);
         }
         #endregion
 
@@ -77,9 +77,12 @@ namespace MagicBot
             //we do all of this in empty try catches because it is not mandatory information
             try
             {
+                HtmlDocument html = new HtmlDocument();
                 //crawl the webpage to get this information
-                HtmlWeb htmlWeb = new HtmlWeb();
-                HtmlDocument html = await htmlWeb.LoadFromWebAsync(spoil.FullUrlWebSite);
+                using (Stream stream = await Program.GetImageFromUrlStreamAsync(spoil.FullUrlWebSite))
+                {
+                    html.Load(stream);
+                }
 
                 try
                 {
@@ -92,8 +95,10 @@ namespace MagicBot
                             string possible = url.AbsoluteUri.Remove(url.AbsoluteUri.Length - url.Segments.Last().Length) + possibleImage.Attributes["src"].Value.ToString();
                             if (possible != spoil.ImageUrl)
                             {
-                                Card extraSide = new Card();
-                                extraSide.ImageUrl = possible;
+                                Card extraSide = new Card
+                                {
+                                    ImageUrl = possible
+                                };
                                 spoil.ExtraSides.Add(extraSide);
                             }
                         }
@@ -177,8 +182,13 @@ namespace MagicBot
             try
             {
                 //loads the website
-                HtmlWeb htmlWeb = new HtmlWeb();
-                HtmlDocument doc = await htmlWeb.LoadFromWebAsync(String.Format("{0}{1}", _websiteUrl, _pathNewCards));
+
+                HtmlDocument doc = new HtmlDocument();
+                //crawl the webpage to get this information
+                using (Stream stream = await Program.GetImageFromUrlStreamAsync(String.Format("{0}{1}", _websiteUrl, _pathNewCards)))
+                {
+                    doc.Load(stream);
+                }
 
                 //all the cards are a a href so we get all of that
                 HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//img");
@@ -189,9 +199,11 @@ namespace MagicBot
                         node.Attributes["src"].Value.ToString().Contains("cards") &&
                         node.Attributes["src"].Value.ToString().EndsWith(".jpg"))
                     {
-                        Card card = new Card();
-                        card.FullUrlWebSite = _websiteUrl + node.ParentNode.Attributes["href"].Value.ToString();
-                        card.ImageUrl = _websiteUrl + node.Attributes["src"].Value.ToString();
+                        Card card = new Card
+                        {
+                            FullUrlWebSite = _websiteUrl + node.ParentNode.Attributes["href"].Value.ToString(),
+                            ImageUrl = _websiteUrl + node.Attributes["src"].Value.ToString()
+                        };
                         lstCards.Add(card);
                     }
 

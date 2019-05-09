@@ -15,9 +15,9 @@ namespace MagicBot
     public class TelegramController
     {
         #region Definitions
-        private String _telegramBotApiKey;
-        private Telegram.Bot.TelegramBotClient _botClient;
-        private Int32 _offset;
+        private readonly string _telegramBotApiKey;
+        private readonly Telegram.Bot.TelegramBotClient _botClient;
+        private int _offset;
         #endregion
 
         #region Constructors
@@ -39,12 +39,7 @@ namespace MagicBot
         {
             //goes trough all the chats and send a message for each one
             List<Chat> lstChat = await Database.GetAllChats();
-            // List<Chat> lstChat = new List<Chat>(){
-            //     new Chat()
-            //     {
-            //         Id = -1001108555769,
-            //     }
-            // };
+
             foreach (Chat chat in lstChat)
             {
                 await SendSpoilToChat(card, chat);
@@ -54,8 +49,8 @@ namespace MagicBot
         public void HookUpdateEvent()
         {
             //removes then adds the handler, that way it make sure that the event is handled
-            _botClient.OnUpdate -= botClientOnUpdate;
-            _botClient.OnUpdate += botClientOnUpdate;
+            _botClient.OnUpdate -= BotClientOnUpdate;
+            _botClient.OnUpdate += BotClientOnUpdate;
             _botClient.StartReceiving();
         }
 
@@ -67,41 +62,39 @@ namespace MagicBot
         {
             try
             {
-                int replyToMessage = 0;
+                int replyToMessage;
+                String messageText;
+                //if the text is to big, we need to send it as a message afterwards
+                Boolean isTextToBig = card.GetTelegramText().Length >= 200;
+
+                if (isTextToBig)
                 {
-                    String messageText;
-                    //if the text is to big, we need to send it as a message afterwards
-                    Boolean isTextToBig = card.GetTelegramText().Length >= 200;
+                    messageText = card.Name?.ToString();
+                }
+                else
+                {
+                    messageText = card.GetTelegramText();
+                }
 
-                    if (isTextToBig)
-                    {
-                        messageText = card.Name;
-                    }
-                    else
-                    {
-                        messageText = card.GetTelegramText();
-                    }
-
-                    Stream stream = await Program.GetImageFromUrlStreamAsync(card.ImageUrl);
-                    var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, WebUtility.UrlEncode(card.Name.Trim() + ".jpg")), messageText, replyToMessageId: replyToMessage);
+                using (Stream stream = await Program.GetImageFromUrlStreamAsync(card.ImageUrl))
+                {
+                    var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream), messageText);
                     replyToMessage = message.MessageId;
 
-
                     if (isTextToBig)
                     {
-                        message = await _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
+                        message = await _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, replyToMessageId: replyToMessage);
                         replyToMessage = message.MessageId;
                     }
-
                 }
+
 
                 //if there is a additional image, we send it as a reply
                 if (card.ExtraSides != null && card.ExtraSides.Count > 0)
                 {
                     foreach (Card extraSide in card.ExtraSides)
                     {
-                        String messageText;
-                        Boolean isTextToBig = extraSide.GetTelegramText().Length >= 200;
+                        isTextToBig = extraSide.GetTelegramText().Length >= 200;
 
                         if (isTextToBig)
                         {
@@ -113,18 +106,18 @@ namespace MagicBot
                         }
 
                         //try to send directly, if it fails we download then upload it
-                        Stream stream = await Program.GetImageFromUrlStreamAsync(extraSide.ImageUrl);
-                        var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream, WebUtility.UrlEncode(extraSide.Name.Trim() + ".jpg")), messageText, replyToMessageId: replyToMessage);
-                        replyToMessage = message.MessageId;
-
-
-                        if (isTextToBig)
+                        using (Stream stream = await Program.GetImageFromUrlStreamAsync(extraSide.ImageUrl))
                         {
-                            message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, false, false, replyToMessage);
+                            var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream), messageText, replyToMessageId: replyToMessage);
                             replyToMessage = message.MessageId;
+
+                            if (isTextToBig)
+                            {
+                                message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, replyToMessageId: replyToMessage);
+                                replyToMessage = message.MessageId;
+                            }
                         }
                     }
-
                 }
 
             }
@@ -223,7 +216,7 @@ namespace MagicBot
         #endregion
 
         #region Events
-        private void botClientOnUpdate(object sender, UpdateEventArgs args)
+        private void BotClientOnUpdate(object sender, UpdateEventArgs args)
         {
             try
             {

@@ -16,7 +16,7 @@ namespace MagicBot
 {
     public class Program
     {
-        async public static Task Main(string[] args)
+        async public static Task Main()
         {
 
             try
@@ -100,9 +100,9 @@ namespace MagicBot
             // _mtgSalvationTasker.eventNewcard += EventNewcard;
 
             MythicApiTasker = new MythicApiTasker(config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"]);
-            MythicApiTasker.eventNewcard += async (s, e) =>
+            MythicApiTasker.EventNewcard += async (s, e) =>
             {
-                await EventNewcardAsync(s, e);
+                await EventNewcardAsync(e);
             };
 
             //_mtgVisualApiTasker = new MTGVisualTasker();
@@ -121,7 +121,7 @@ namespace MagicBot
 
         #region Events Handlers
 
-        async private static Task EventNewcardAsync(object sender, Card newItem)
+        async private static Task EventNewcardAsync(Card newItem)
         {
             if (newItem.ImageUrl != null)
             {
@@ -141,7 +141,7 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
-                    await TwitterController.PublishNewImage(newItem);
+                    //await TwitterController.PublishNewImage(newItem);
                 }
                 catch (Exception ex)
                 {
