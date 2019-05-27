@@ -9,11 +9,21 @@ namespace MagicBot
 {
     public class Card
     {
+        private string name;
         [JsonProperty("name")]
-        public String Name
+        public string Name
         {
-            get;
-            set;
+            get
+            {
+                if (string.IsNullOrEmpty(name))
+                    return name;
+                else
+                    return String.Empty;
+            }
+            set
+            {
+                name = value;
+            }
         }
 
         [JsonProperty("type_line")]

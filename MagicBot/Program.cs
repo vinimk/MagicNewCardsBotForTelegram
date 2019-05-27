@@ -136,18 +136,20 @@ namespace MagicBot
                     await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
                     Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
+                    Program.WriteLine(ex.StackTrace);
                 }
 
                 Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
-                    await TwitterController.PublishNewImage(newItem);
+                   await TwitterController.PublishNewImage(newItem);
                 }
                 catch (Exception ex)
                 {
                     await Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
                     Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
+                    Program.WriteLine(ex.StackTrace);
                 }
             }
         }

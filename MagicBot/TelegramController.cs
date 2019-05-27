@@ -135,7 +135,7 @@ namespace MagicBot
                 }
                 else
                 {
-                    await Database.InsertLog("Telegram send message", card.Name, ex.ToString());
+                    await Database.InsertLog($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}", card.Name, ex.ToString());
                     Program.WriteLine(ex.Message);
                     if (!String.IsNullOrEmpty(chat.FirstName))
                     {
@@ -146,6 +146,7 @@ namespace MagicBot
                         Program.WriteLine("Title: " + chat.Title);
                     }
 
+                    await _botClient.SendTextMessageAsync(23973855, $"Error on {card.FullUrlWebSite} image: {card.ImageUrl}");
                     Program.WriteLine(ex.StackTrace);
                 }
             }
