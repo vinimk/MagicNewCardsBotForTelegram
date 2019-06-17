@@ -133,9 +133,14 @@ namespace MagicBot
                     Program.WriteLine(String.Format("Bot was blocked by user {0}, consider deletting him from the database on table Chats", chat.FirstName));
                     return;
                 }
+                else if (ex.Message.Contains("user is deactivated"))
+                {
+                    Program.WriteLine(String.Format("User {0} deactivated, consider deletting him from the database on table Chats", chat.FirstName));
+                    return;
+                }
                 else
                 {
-                    await Database.InsertLog($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}", card.Name, ex.ToString());
+                    await Database.InsertLog($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}, user: {chat.FirstName} group: {chat.Title}", card.Name, ex.ToString());
                     Program.WriteLine(ex.Message);
                     if (!String.IsNullOrEmpty(chat.FirstName))
                     {
@@ -146,7 +151,7 @@ namespace MagicBot
                         Program.WriteLine("Title: " + chat.Title);
                     }
 
-                    await _botClient.SendTextMessageAsync(23973855, $"Error on {card.FullUrlWebSite} image: {card.ImageUrl}");
+                    await _botClient.SendTextMessageAsync(23973855, $"Error on {card.FullUrlWebSite} image: {card.ImageUrl} user: {chat.FirstName} group: {chat.Title}");
                     Program.WriteLine(ex.StackTrace);
                 }
             }
