@@ -15,7 +15,7 @@ namespace MagicBot
         {
             get
             {
-                if (string.IsNullOrEmpty(name))
+                if (!string.IsNullOrEmpty(name))
                     return name;
                 else
                     return String.Empty;

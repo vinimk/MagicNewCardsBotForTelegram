@@ -109,7 +109,12 @@ namespace MagicBot
 
                 try
                 {
-                    spoil.Name = html.DocumentNode.SelectSingleNode("html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[1]/td[1]/font[1]").LastChild.InnerText.Trim();
+                    string name = html.DocumentNode.SelectSingleNode(".//title").InnerText.Trim();
+                    int indexSeparator = name.IndexOf('|');
+                    if (name.Length >= indexSeparator)
+                        name = name.Substring(0, name.IndexOf('|')).Trim();
+
+                    spoil.Name = name;
                 }
                 catch
                 { }
