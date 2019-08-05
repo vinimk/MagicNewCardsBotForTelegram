@@ -114,7 +114,10 @@ namespace MagicBot
                     if (name.Length >= indexSeparator)
                         name = name.Substring(0, name.IndexOf('|')).Trim();
 
-                    spoil.Name = name;
+                    if (name != "MythicSpoiler")
+                    {
+                        spoil.Name = name;
+                    }
                 }
                 catch
                 { }
