@@ -20,8 +20,8 @@
     <PackageReference Include="MySqlConnector" Version="0.56.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0006" />
-    <PackageReference Include="Telegram.Bot" Version="14.12.0" />
-    <PackageReference Include="TweetinviAPI" Version="4.0.1" />
+    <PackageReference Include="Telegram.Bot" Version="15.0.0" />
+    <PackageReference Include="TweetinviAPI" Version="4.0.2" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json">

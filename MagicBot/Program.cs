@@ -43,7 +43,7 @@ namespace MagicBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Program.WriteLine("Getting new cards");
-                    await MythicApiTasker.GetNewCards();
+                    await _tasker.GetNewCards();
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
                     Program.WriteLine(String.Format("Going to sleep for {0} ms.", TimeInternalMS));
@@ -68,7 +68,7 @@ namespace MagicBot
 
         #region Definitions
         //private static MTGVisualTasker _mtgVisualApiTasker;
-        private static MythicApiTasker _mythicApiTasker;
+        private static Tasker _tasker;
         //private static MTGSalvationTasker _mtgSalvationTasker;
         //private static ScryfallApiTasker _scryfallApiTasker;
         private static TelegramController _telegramController;
@@ -78,7 +78,6 @@ namespace MagicBot
         public static int TimeInternalMS { get => _timeInternalMS; set => _timeInternalMS = value; }
         public static TwitterController TwitterController { get => _twitterController; set => _twitterController = value; }
         public static TelegramController TelegramController { get => _telegramController; set => _telegramController = value; }
-        public static MythicApiTasker MythicApiTasker { get => _mythicApiTasker; set => _mythicApiTasker = value; }
         #endregion
 
         #region Init configs
@@ -96,20 +95,13 @@ namespace MagicBot
 
             Database.SetConnectionString(config["ConnectionStringMySQL"]);
 
-            // _mtgSalvationTasker = new MTGSalvationTasker();
-            // _mtgSalvationTasker.eventNewcard += EventNewcard;
 
-            MythicApiTasker = new MythicApiTasker(config["MythicWebsiteUrl"], config["MythicWebsitePathNewCards"]);
-            MythicApiTasker.EventNewcard += async (s, e) =>
+            _tasker = new MTGPicsTasker();
+            _tasker.EventNewcard += async (s, e) =>
             {
                 await EventNewcardAsync(e);
             };
 
-            //_mtgVisualApiTasker = new MTGVisualTasker();
-            //_mtgVisualApiTasker.eventNewcard += EventNewcard;
-
-            // _scryfallApiTasker = new ScryfallApiTasker();
-            // _scryfallApiTasker.eventNewcard += EventNewcard;
 
             TelegramController = new TelegramController(config["TelegramBotApiKey"]);
 
@@ -123,34 +115,43 @@ namespace MagicBot
 
         async private static Task EventNewcardAsync(Card newItem)
         {
-            if (newItem.ImageUrl != null)
+            try
             {
-                Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
-                await Database.UpdateIsSent(newItem, true);
-                try
+                if (newItem.ImageUrl != null)
                 {
-                    await TelegramController.SendImageToAll(newItem);
-                }
-                catch (Exception ex)
-                {
-                    await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
-                    Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
-                    Program.WriteLine(ex.Message);
-                    Program.WriteLine(ex.StackTrace);
-                }
+                    Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
+                    await Database.UpdateIsSent(newItem, true);
+                    try
+                    {
+                        await TelegramController.SendImageToAll(newItem);
+                    }
+                    catch (Exception ex)
+                    {
+                        await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
+                        Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
+                        Program.WriteLine(ex.Message);
+                        Program.WriteLine(ex.StackTrace);
+                    }
 
-                Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
-                try
-                {
-                   await TwitterController.PublishNewImage(newItem);
+                    Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
+                    try
+                    {
+                        await TwitterController.PublishNewImage(newItem);
+                    }
+                    catch (Exception ex)
+                    {
+                        await Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
+                        Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
+                        Program.WriteLine(ex.Message);
+                        Program.WriteLine(ex.StackTrace);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    await Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
-                    Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
-                    Program.WriteLine(ex.Message);
-                    Program.WriteLine(ex.StackTrace);
-                }
+            }
+            catch (Exception ex)
+            {
+                Program.WriteLine(String.Format("Failed on event ", newItem.Name));
+                Program.WriteLine(ex.Message);
+                Program.WriteLine(ex.StackTrace);
             }
         }
         #endregion
