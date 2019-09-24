@@ -11,68 +11,64 @@ using System.Threading.Tasks;
 
 namespace MagicBot
 {
-    public class MythicApiTasker
+    public class MythicApiTasker : Tasker
     {
         #region Definitions
-        private readonly string _websiteUrl;
-        private readonly string _pathNewCards;
+        private readonly string _websiteUrl = "https://mythicspoiler.com/";
+        private readonly string _pathNewCards = "newspoilers.html";
         #endregion
 
-        #region Constructors
-        public MythicApiTasker(String websiteUrl, String pathNewCards)
-        {
-            _websiteUrl = websiteUrl;
-            _pathNewCards = pathNewCards;
-        }
-        #endregion
+        #region Overrided Methods
 
-        #region Events
-        public delegate Task NewCard(object sender, Card e);
-        //public delegate void NewCard(object sender, Card newItem);
-        public event NewCard EventNewcard;
-        async protected virtual void OnNewCard(Card args)
+        async override protected Task<List<Card>> GetAvaliableCardsInWebSite()
         {
-            if (EventNewcard != null)
-                await EventNewcard(this, args);
-        }
-        #endregion
-
-        #region Public Methods
-        async public Task GetNewCards()
-        {
-            await CheckNewCards();
-        }
-        #endregion
-
-        #region Private Methods
-        async private Task CheckNewCards()
-        {
-            //get the aditional infos from the website
-            List<Card> lstCards = await GetAvaliableCardsInWebSite();
-            for (int i = 0; i < Database.MAX_CARDS && i < lstCards.Count; i++)
+            List<Card> lstCards = new List<Card>();
+            try
             {
-                Card card = lstCards[i];
-                await CheckCard(card);
-            }
-        }
+                //loads the website
 
-        async private Task CheckCard(Card card)
-        {
-            //check if the spoil is in the database
-            //if is not in the database AND has NOT been sent
-            var cardInDb = await Database.IsCardInDatabase(card, true);
-            if (cardInDb == false)
+                HtmlDocument doc = new HtmlDocument();
+                //crawl the webpage to get this information
+                using (Stream stream = await Program.GetStreamFromUrlAsync(String.Format("{0}{1}", _websiteUrl, _pathNewCards)))
+                {
+                    doc.Load(stream);
+                }
+
+                //all the cards are a a href so we get all of that
+                HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//img");
+                foreach (HtmlNode node in nodesCards)
+                {
+                    //also the cards have a special class called 'card', so we use it to get the right ones
+                    if (node.Attributes.Contains("src") &&
+                        node.Attributes["src"].Value.ToString().Contains("cards") &&
+                        node.Attributes["src"].Value.ToString().EndsWith(".jpg"))
+                    {
+                        Card card = new Card
+                        {
+                            FullUrlWebSite = _websiteUrl + node.ParentNode.Attributes["href"].Value.ToString(),
+                            ImageUrl = _websiteUrl + node.Attributes["src"].Value.ToString()
+                        };
+                        lstCards.Add(card);
+                    }
+
+                    //only get the lastest 50
+                    if (lstCards.Count == Database.MAX_CARDS)
+                        break;
+                }
+            }
+            catch (Exception ex)
             {
-                card = await GetAdditionalInfo(card);
-                //adds in the database
-                await Database.InsertScryfallCard(card);
-
-                //fires the event to do stuffs with the new object
-                OnNewCard(card);
+                Database.InsertLog("Error crawling the main page", String.Empty, ex.ToString()).Wait();
+                Program.WriteLine("Error crawling the main page");
+                Program.WriteLine(ex.Message);
+                Program.WriteLine(ex.StackTrace);
             }
+
+            return lstCards;
         }
 
-        async private Task<Card> GetAdditionalInfo(Card spoil)
+
+        async override protected Task<Card> GetAdditionalInfo(Card spoil)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
@@ -182,53 +178,6 @@ namespace MagicBot
             catch
             { }
             return spoil;
-        }
-
-        async private Task<List<Card>> GetAvaliableCardsInWebSite()
-        {
-            List<Card> lstCards = new List<Card>();
-            try
-            {
-                //loads the website
-
-                HtmlDocument doc = new HtmlDocument();
-                //crawl the webpage to get this information
-                using (Stream stream = await Program.GetStreamFromUrlAsync(String.Format("{0}{1}", _websiteUrl, _pathNewCards)))
-                {
-                    doc.Load(stream);
-                }
-
-                //all the cards are a a href so we get all of that
-                HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//img");
-                foreach (HtmlNode node in nodesCards)
-                {
-                    //also the cards have a special class called 'card', so we use it to get the right ones
-                    if (node.Attributes.Contains("src") &&
-                        node.Attributes["src"].Value.ToString().Contains("cards") &&
-                        node.Attributes["src"].Value.ToString().EndsWith(".jpg"))
-                    {
-                        Card card = new Card
-                        {
-                            FullUrlWebSite = _websiteUrl + node.ParentNode.Attributes["href"].Value.ToString(),
-                            ImageUrl = _websiteUrl + node.Attributes["src"].Value.ToString()
-                        };
-                        lstCards.Add(card);
-                    }
-
-                    //only get the lastest 50
-                    if (lstCards.Count == Database.MAX_CARDS)
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Database.InsertLog("Error crawling the main page", String.Empty, ex.ToString()).Wait();
-                Program.WriteLine("Error crawling the main page");
-                Program.WriteLine(ex.Message);
-                Program.WriteLine(ex.StackTrace);
-            }
-
-            return lstCards;
         }
 
         #endregion

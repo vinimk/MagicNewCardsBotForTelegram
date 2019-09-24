@@ -99,6 +99,12 @@ namespace MagicBot
             set;
         }
 
+        public int? Loyalty
+        {
+            get;
+            set;
+        }
+
         #region Methods
 
         public Card()
@@ -195,6 +201,12 @@ namespace MagicBot
             if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
             {
                 sb.Append(String.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
+                sb.Append(lineBreak);
+            }
+
+            if (Loyalty.HasValue)
+            {
+                sb.Append(String.Format("<b>Loyalty:</b> {0}", Loyalty.Value));
                 sb.Append(lineBreak);
             }
 
