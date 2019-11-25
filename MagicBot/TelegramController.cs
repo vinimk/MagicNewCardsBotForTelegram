@@ -83,6 +83,7 @@ namespace MagicBot
 
                     if (isTextToBig)
                     {
+                        await Task.Delay(500);
                         message = await _botClient.SendTextMessageAsync(chat, card.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, replyToMessageId: replyToMessage);
                         replyToMessage = message.MessageId;
                     }
@@ -113,29 +114,29 @@ namespace MagicBot
 
                             if (isTextToBig)
                             {
+                                await Task.Delay(500);
                                 message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, replyToMessageId: replyToMessage);
                                 replyToMessage = message.MessageId;
                             }
                         }
                     }
                 }
-
             }
             catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
             {
                 if (ex.Message.Contains("bot was kicked"))
                 {
-                    Program.WriteLine(String.Format("Bot was kicked from group {0}, consider deletting him from the database on table Chats", chat.Title));
+                    Program.WriteLine(String.Format("Bot was kicked from group {0}, consider deletting him from the database on table Chats", chat.Id));
                     return;
                 }
                 else if (ex.Message.Contains("bot was blocked by the user"))
                 {
-                    Program.WriteLine(String.Format("Bot was blocked by user {0}, consider deletting him from the database on table Chats", chat.FirstName));
+                    Program.WriteLine(String.Format("Bot was blocked by user {0}, consider deletting him from the database on table Chats", chat.Id));
                     return;
                 }
                 else if (ex.Message.Contains("user is deactivated"))
                 {
-                    Program.WriteLine(String.Format("User {0} deactivated, consider deletting him from the database on table Chats", chat.FirstName));
+                    Program.WriteLine(String.Format("User {0} deactivated, consider deletting him from the database on table Chats", chat.Id));
                     return;
                 }
                 else
