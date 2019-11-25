@@ -38,30 +38,39 @@ namespace MagicBot
 
                     //all the cards are a a href so we get all of that
                     HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//div[@class='S12']");
-                    foreach (HtmlNode node in nodesCards)
+                    if (nodesCards != null)
                     {
-                        var nodeImageCard = node.SelectSingleNode(".//img");
-                        //also the cards have a special class called 'card', so we use it to get the right ones
-                        if (nodeImageCard.Attributes.Contains("src") &&
-                            nodeImageCard.Attributes["src"].Value.ToString().EndsWith(".jpg"))
+                        int crawlsFromThisSite = 0;
+                        foreach (HtmlNode node in nodesCards)
                         {
-                            string cardUrl = nodeImageCard.ParentNode.Attributes["href"].Value.ToString();
-                            if (!cardUrl.Contains(_websiteUrl))
+                            var nodeImageCard = node.SelectSingleNode(".//img");
+                            //also the cards have a special class called 'card', so we use it to get the right ones
+                            if (nodeImageCard.Attributes.Contains("src") &&
+                                nodeImageCard.Attributes["src"].Value.ToString().EndsWith(".jpg"))
                             {
-                                cardUrl = _websiteUrl + cardUrl;
+                                string cardUrl = nodeImageCard.ParentNode.Attributes["href"].Value.ToString();
+                                if (!cardUrl.Contains(_websiteUrl))
+                                {
+                                    cardUrl = _websiteUrl + cardUrl;
+                                }
+
+                                string imageUrl = nodeImageCard.Attributes["src"].Value.ToString();
+                                if (!imageUrl.Contains(_websiteUrl))
+                                {
+                                    imageUrl = _websiteUrl + imageUrl;
+                                }
+                                lstCards.Add(new Card
+                                {
+                                    FullUrlWebSite = cardUrl,
+                                    ImageUrl = imageUrl
+                                });
                             }
 
-                            string imageUrl = nodeImageCard.Attributes["src"].Value.ToString();
-                            if (!imageUrl.Contains(_websiteUrl))
-                            {
-                                imageUrl = _websiteUrl + imageUrl;
-                            }
-                            lstCards.Add(new Card { FullUrlWebSite = cardUrl, ImageUrl = imageUrl });
+                            crawlsFromThisSite++;
+                            //only get the lastest 50
+                            if (crawlsFromThisSite == Database.MAX_CARDS)
+                                break;
                         }
-
-                        //only get the lastest 50
-                        if (lstCards.Count == Database.MAX_CARDS)
-                            break;
                     }
                 }
                 catch (Exception ex)
@@ -203,7 +212,7 @@ namespace MagicBot
                                 break;
                             }
                         }
-                        else if(text.Contains("Loyalty:") || text.Contains("Loyalty :"))
+                        else if (text.Contains("Loyalty:") || text.Contains("Loyalty :"))
                         {
                             string numbersOnly = Regex.Replace(text, "[^0-9]", "");
                             spoil.Loyalty = Convert.ToInt32(numbersOnly);

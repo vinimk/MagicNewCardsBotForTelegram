@@ -240,7 +240,14 @@ namespace MagicBot
 
         public override string ToString()
         {
-            return this.FullUrlWebSite;
+            if (!String.IsNullOrWhiteSpace(Name))
+            {
+                return $"{Name} - {FullUrlWebSite}";
+            }
+            else
+            {
+                return FullUrlWebSite;
+            }
         }
 
         #endregion

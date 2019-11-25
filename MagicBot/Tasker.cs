@@ -29,9 +29,8 @@ namespace MagicBot
         {
             //get the aditional infos from the website
             List<Card> lstCards = await GetAvaliableCardsInWebSite();
-            for (int i = 0; i < Database.MAX_CARDS && i < lstCards.Count; i++)
+            foreach (Card card in lstCards)
             {
-                Card card = lstCards[i];
                 await CheckCard(card);
             }
         }
