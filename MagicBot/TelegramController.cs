@@ -35,10 +35,11 @@ namespace MagicBot
         async public Task SendImageToAll(Card card)
         {
             //goes trough all the chats and send a message for each one
-                await foreach (Chat chat in Database.GetAllChats())
-                {
-                    await SendSpoilToChat(card, chat);
-                }
+            await foreach (Chat chat in Database.GetAllChats())
+            {
+                Program.WriteLine($"Sending{card.ToString()} to {chat.Id}");
+                await SendSpoilToChat(card, chat);
+            }
         }
 
         public void HookUpdateEvent()

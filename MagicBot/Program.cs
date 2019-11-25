@@ -108,7 +108,6 @@ namespace MagicBot
 
             if (newItem.ImageUrl != null)
             {
-                Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
                 await Database.UpdateIsSent(newItem, true);
 
                 Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
