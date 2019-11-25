@@ -1,11 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Telegram.Bot.Args;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.InputFiles;
 
@@ -38,11 +35,12 @@ namespace MagicBot
         async public Task SendImageToAll(Card card)
         {
             //goes trough all the chats and send a message for each one
-            List<Chat> lstChat = await Database.GetAllChats();
-
-            foreach (Chat chat in lstChat)
+            using (Stream image = await Program.GetStreamFromUrlAsync(card.ImageUrl))
             {
-                await SendSpoilToChat(card, chat);
+                await foreach (Chat chat in Database.GetAllChats())
+                {
+                    await SendSpoilToChat(card, chat, image);
+                }
             }
         }
 
@@ -54,11 +52,12 @@ namespace MagicBot
             _botClient.StartReceiving();
         }
 
+
         #endregion
 
         #region Private Methods
 
-        async private Task SendSpoilToChat(Card card, Chat chat)
+        async private Task SendSpoilToChat(Card card, Chat chat, Stream mainImageStream)
         {
             try
             {
@@ -76,11 +75,9 @@ namespace MagicBot
                     messageText = card.GetTelegramText();
                 }
 
-                using (Stream stream = await Program.GetStreamFromUrlAsync(card.ImageUrl))
                 {
-                    var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream), messageText);
+                    var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(mainImageStream), messageText);
                     replyToMessage = message.MessageId;
-
                     if (isTextToBig)
                     {
                         await Task.Delay(500);
@@ -114,7 +111,6 @@ namespace MagicBot
 
                             if (isTextToBig)
                             {
-                                await Task.Delay(500);
                                 message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, replyToMessageId: replyToMessage);
                                 replyToMessage = message.MessageId;
                             }

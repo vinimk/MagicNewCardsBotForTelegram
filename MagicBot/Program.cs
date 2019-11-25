@@ -1,16 +1,8 @@
-﻿using System;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.IO;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
-using Telegram.Bot.Types;
 
 namespace MagicBot
 {
@@ -43,7 +35,10 @@ namespace MagicBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Program.WriteLine("Getting new cards");
-                    await _tasker.GetNewCards();
+                    await foreach (Card newCard in _tasker.GetNewCards())
+                    {
+                        await SendAndTweetCard(newCard);
+                    }
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
                     Program.WriteLine(String.Format("Going to sleep for {0} ms.", TimeInternalMS));
@@ -91,17 +86,12 @@ namespace MagicBot
 
             var config = builder.Build();
 
+
+            _tasker = new MTGPicsTasker();
+
             TimeInternalMS = Int32.Parse(config["TimeExecuteIntervalInMs"]);
 
             Database.SetConnectionString(config["ConnectionStringMySQL"]);
-
-
-            _tasker = new MTGPicsTasker();
-            _tasker.EventNewcard += async (s, e) =>
-            {
-                await EventNewcardAsync(e);
-            };
-
 
             TelegramController = new TelegramController(config["TelegramBotApiKey"]);
 
@@ -113,45 +103,38 @@ namespace MagicBot
 
         #region Events Handlers
 
-        async private static Task EventNewcardAsync(Card newItem)
+        async private static Task SendAndTweetCard(Card newItem)
         {
-            try
-            {
-                if (newItem.ImageUrl != null)
-                {
-                    Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
-                    await Database.UpdateIsSent(newItem, true);
-                    try
-                    {
-                        await TelegramController.SendImageToAll(newItem);
-                    }
-                    catch (Exception ex)
-                    {
-                        await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
-                        Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
-                        Program.WriteLine(ex.Message);
-                        Program.WriteLine(ex.StackTrace);
-                    }
 
-                    Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
-                    try
-                    {
-                        await TwitterController.PublishNewImage(newItem);
-                    }
-                    catch (Exception ex)
-                    {
-                        await Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
-                        Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
-                        Program.WriteLine(ex.Message);
-                        Program.WriteLine(ex.StackTrace);
-                    }
-                }
-            }
-            catch (Exception ex)
+            if (newItem.ImageUrl != null)
             {
-                Program.WriteLine(String.Format("Failed on event ", newItem.Name));
-                Program.WriteLine(ex.Message);
-                Program.WriteLine(ex.StackTrace);
+                Program.WriteLine(String.Format("Sending new card {0} to everyone", newItem.Name));
+                await Database.UpdateIsSent(newItem, true);
+
+                Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
+                try
+                {
+                    await TwitterController.PublishNewImage(newItem);
+                }
+                catch (Exception ex)
+                {
+                    await Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
+                    Program.WriteLine(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
+                    Program.WriteLine(ex.Message);
+                    Program.WriteLine(ex.StackTrace);
+                }
+
+                try
+                {
+                    await TelegramController.SendImageToAll(newItem);
+                }
+                catch (Exception ex)
+                {
+                    await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
+                    Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
+                    Program.WriteLine(ex.Message);
+                    Program.WriteLine(ex.StackTrace);
+                }
             }
         }
         #endregion

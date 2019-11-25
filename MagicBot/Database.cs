@@ -204,7 +204,7 @@ namespace MagicBot
             }
         }
 
-        async public static Task<List<Chat>> GetAllChats()
+        async public static IAsyncEnumerable<Chat> GetAllChats()
         {
             using (MySqlConnection conn = new MySqlConnection(_connectionString))
             {
@@ -233,7 +233,7 @@ namespace MagicBot
                                 FirstName = await reader.GetFieldValueAsync<String>(2),
                                 Type = type,
                             };
-                            retList.Add(chat);
+                            yield return chat;
                         }
                     }
                 }
@@ -241,7 +241,6 @@ namespace MagicBot
                 {
                     conn.Close();
                 }
-                return retList;
             }
         }
 

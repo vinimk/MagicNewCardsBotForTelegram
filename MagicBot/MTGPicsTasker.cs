@@ -13,80 +13,66 @@ namespace MagicBot
     {
         #region Definitions
         private readonly string _websiteUrl = "https://www.mtgpics.com/";
-        private readonly string _pathNewCards = "";
         #endregion
 
         #region Overrided Methods
 
-        async override protected Task<List<Card>> GetAvaliableCardsInWebSite()
+        async override protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSite()
         {
             List<Set> setsToCrawl = await Database.GetAllCrawlableSets();
-            List<Card> lstCards = new List<Card>();
             foreach (Set set in setsToCrawl)
             {
+                //loads the website
 
-                try
+                HtmlDocument doc = new HtmlDocument();
+                //crawl the webpage to get this information
+                using (Stream stream = await Program.GetStreamFromUrlAsync(set.URL))
                 {
-                    //loads the website
+                    doc.Load(stream);
+                }
 
-                    HtmlDocument doc = new HtmlDocument();
-                    //crawl the webpage to get this information
-                    using (Stream stream = await Program.GetStreamFromUrlAsync(set.URL))
+                //all the cards are a a href so we get all of that
+                HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//div[@class='S12']");
+                if (nodesCards != null)
+                {
+                    int crawlsFromThisSite = 0;
+                    foreach (HtmlNode node in nodesCards)
                     {
-                        doc.Load(stream);
-                    }
-
-                    //all the cards are a a href so we get all of that
-                    HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//div[@class='S12']");
-                    if (nodesCards != null)
-                    {
-                        int crawlsFromThisSite = 0;
-                        foreach (HtmlNode node in nodesCards)
+                        var nodeImageCard = node.SelectSingleNode(".//img");
+                        //also the cards have a special class called 'card', so we use it to get the right ones
+                        if (nodeImageCard.Attributes.Contains("src") &&
+                            nodeImageCard.Attributes["src"].Value.ToString().EndsWith(".jpg"))
                         {
-                            var nodeImageCard = node.SelectSingleNode(".//img");
-                            //also the cards have a special class called 'card', so we use it to get the right ones
-                            if (nodeImageCard.Attributes.Contains("src") &&
-                                nodeImageCard.Attributes["src"].Value.ToString().EndsWith(".jpg"))
+                            string cardUrl = nodeImageCard.ParentNode.Attributes["href"].Value.ToString();
+                            if (!cardUrl.Contains(_websiteUrl))
                             {
-                                string cardUrl = nodeImageCard.ParentNode.Attributes["href"].Value.ToString();
-                                if (!cardUrl.Contains(_websiteUrl))
-                                {
-                                    cardUrl = _websiteUrl + cardUrl;
-                                }
-
-                                string imageUrl = nodeImageCard.Attributes["src"].Value.ToString();
-                                if (!imageUrl.Contains(_websiteUrl))
-                                {
-                                    imageUrl = _websiteUrl + imageUrl;
-                                }
-                                lstCards.Add(new Card
-                                {
-                                    FullUrlWebSite = cardUrl,
-                                    ImageUrl = imageUrl
-                                });
+                                cardUrl = _websiteUrl + cardUrl;
                             }
 
-                            crawlsFromThisSite++;
-                            //only get the lastest 50
-                            if (crawlsFromThisSite == Database.MAX_CARDS)
-                                break;
+                            string imageUrl = nodeImageCard.Attributes["src"].Value.ToString();
+                            if (!imageUrl.Contains(_websiteUrl))
+                            {
+                                imageUrl = _websiteUrl + imageUrl;
+                            }
+                            var card = new Card
+                            {
+                                FullUrlWebSite = cardUrl,
+                                ImageUrl = imageUrl
+                            };
+                            yield return card;
                         }
+
+                        crawlsFromThisSite++;
+                        //only get the lastest 50
+                        if (crawlsFromThisSite == Database.MAX_CARDS)
+                            break;
                     }
                 }
-                catch (Exception ex)
-                {
-                    Database.InsertLog("Error crawling the main page", String.Empty, ex.ToString()).Wait();
-                    Program.WriteLine("Error crawling the main page");
-                    Program.WriteLine(ex.Message);
-                    Program.WriteLine(ex.StackTrace);
-                }
-
             }
-            return lstCards;
         }
 
 
-        async override protected Task<Card> GetAdditionalInfo(Card spoil)
+        async override protected Task GetAdditionalInfo(Card spoil)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
@@ -225,7 +211,6 @@ namespace MagicBot
             }
             catch
             { }
-            return spoil;
         }
 
         #endregion
