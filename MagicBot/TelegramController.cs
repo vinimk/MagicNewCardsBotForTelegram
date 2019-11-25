@@ -35,13 +35,10 @@ namespace MagicBot
         async public Task SendImageToAll(Card card)
         {
             //goes trough all the chats and send a message for each one
-            using (Stream image = await Program.GetStreamFromUrlAsync(card.ImageUrl))
-            {
                 await foreach (Chat chat in Database.GetAllChats())
                 {
-                    await SendSpoilToChat(card, chat, image);
+                    await SendSpoilToChat(card, chat);
                 }
-            }
         }
 
         public void HookUpdateEvent()
@@ -57,14 +54,14 @@ namespace MagicBot
 
         #region Private Methods
 
-        async private Task SendSpoilToChat(Card card, Chat chat, Stream mainImageStream)
+        async private Task SendSpoilToChat(Card card, Chat chat)
         {
             try
             {
                 int replyToMessage;
                 String messageText;
                 //if the text is to big, we need to send it as a message afterwards
-                Boolean isTextToBig = card.GetTelegramText().Length >= 200;
+                Boolean isTextToBig = card.GetTelegramText().Length > 1024;
 
                 if (isTextToBig)
                 {
@@ -76,7 +73,7 @@ namespace MagicBot
                 }
 
                 {
-                    var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(mainImageStream), messageText);
+                    var message = await _botClient.SendPhotoAsync(chatId: chat, photo: card.ImageUrl, caption: messageText, parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
                     replyToMessage = message.MessageId;
                     if (isTextToBig)
                     {
@@ -88,35 +85,35 @@ namespace MagicBot
 
 
                 //if there is a additional image, we send it as a reply
-                if (card.ExtraSides != null && card.ExtraSides.Count > 0)
-                {
-                    foreach (Card extraSide in card.ExtraSides)
-                    {
-                        isTextToBig = extraSide.GetTelegramText().Length >= 200;
+                //if (card.ExtraSides != null && card.ExtraSides.Count > 0)
+                //{
+                //    foreach (Card extraSide in card.ExtraSides)
+                //    {
+                //        isTextToBig = extraSide.GetTelegramText().Length >= 200;
 
-                        if (isTextToBig)
-                        {
-                            messageText = extraSide.Name;
-                        }
-                        else
-                        {
-                            messageText = extraSide.GetTelegramText();
-                        }
+                //        if (isTextToBig)
+                //        {
+                //            messageText = extraSide.Name;
+                //        }
+                //        else
+                //        {
+                //            messageText = extraSide.GetTelegramText();
+                //        }
 
-                        //try to send directly, if it fails we download then upload it
-                        using (Stream stream = await Program.GetStreamFromUrlAsync(extraSide.ImageUrl))
-                        {
-                            var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream), messageText, replyToMessageId: replyToMessage);
-                            replyToMessage = message.MessageId;
+                //        //try to send directly, if it fails we download then upload it
+                //        using (Stream stream = await Program.GetStreamFromUrlAsync(extraSide.ImageUrl))
+                //        {
+                //            var message = await _botClient.SendPhotoAsync(chat, new InputOnlineFile(stream), messageText, replyToMessageId: replyToMessage);
+                //            replyToMessage = message.MessageId;
 
-                            if (isTextToBig)
-                            {
-                                message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, replyToMessageId: replyToMessage);
-                                replyToMessage = message.MessageId;
-                            }
-                        }
-                    }
-                }
+                //            if (isTextToBig)
+                //            {
+                //                message = await _botClient.SendTextMessageAsync(chat, extraSide.GetTelegramTextFormatted(), Telegram.Bot.Types.Enums.ParseMode.Html, replyToMessageId: replyToMessage);
+                //                replyToMessage = message.MessageId;
+                //            }
+                //        }
+                //    }
+                //}
             }
             catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group
             {
