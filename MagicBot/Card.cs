@@ -152,7 +152,7 @@ namespace MagicBot
 
             sb.Append(FullUrlWebSite);
 
-            return sb.ToString().Replace("\n", " ").Replace("  ", " "); //this is a linebreak for telegram API
+            return sb.ToString();
         }
 
         public String GetTelegramTextFormatted()
@@ -216,25 +216,33 @@ namespace MagicBot
 
         public String GetTwitterText()
         {
-            String lineBreak = Environment.NewLine;
-            StringBuilder sb = new StringBuilder();
-            if (!String.IsNullOrEmpty(Name))
+            string text =  GetTelegramText() +" #MTG #MagicTheGathering";
+            if (text.Length < 240)
             {
-                sb.Append(Name);
+                return text;
             }
-
-            if (!String.IsNullOrEmpty(Type))
+            else
             {
-                sb.Append(" - ");
-                sb.Append(Type);
+                String lineBreak = Environment.NewLine;
+                StringBuilder sb = new StringBuilder();
+                if (!String.IsNullOrEmpty(Name))
+                {
+                    sb.Append(Name);
+                }
+
+                if (!String.IsNullOrEmpty(Type))
+                {
+                    sb.Append(" - ");
+                    sb.Append(Type);
+                }
+
+                sb.Append(" #MTG #MagicTheGathering");
+
+                sb.Append(lineBreak);
+                sb.Append(FullUrlWebSite);
+
+                return sb.ToString();
             }
-
-            sb.Append(" #MTG #MagicTheGathering");
-
-            sb.Append(lineBreak);
-            sb.Append(FullUrlWebSite);
-
-            return sb.ToString();
         }
 
         public override string ToString()

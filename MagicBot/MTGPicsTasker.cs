@@ -152,22 +152,28 @@ namespace MagicBot
                     StringBuilder sb = new StringBuilder();
                     foreach (var node in parentNode.ChildNodes)
                     {
-                        if (node.Attributes != null && node.Attributes["alt"] != null)
+                        if (node.Attributes != null)
                         {
-                            string symbol = node.Attributes["alt"].Value;
-                            symbol = symbol.Replace("%", "");
-                            sb.Append(symbol.ToUpper());
+                            if (node.Attributes["alt"] != null)
+                            {
+                                string symbol = node.Attributes["alt"].Value;
+                                symbol = symbol.Replace("%", "");
+                                sb.Append(symbol.ToUpper());
+                                continue;
+                            }
+                            else if (node.Attributes["onclick"] != null && node.Attributes["onclick"].Value.Contains("LoadGlo"))
+                            {
+                                continue;
+                            }
                         }
-                        else
-                        {
-                            string text = node.InnerText.Replace("\u0095", "•");
-                            text = text.Replace("\u0097", "-");
-                            text = text.Replace("\n\t\t\t", String.Empty);
-                            text = text.Replace("  ", " ");
-                            text = WebUtility.HtmlDecode(text);
 
-                            sb.Append(text);
-                        }
+                        string text = node.InnerText.Replace("\u0095", "•");
+                        text = text.Replace("\u0097", "-");
+                        text = text.Replace("\n\t\t\t", String.Empty);
+                        text = text.Replace("  ", " ");
+                        text = WebUtility.HtmlDecode(text);
+
+                        sb.Append(text);
                     }
                     spoil.Text = sb.ToString();
                 }

@@ -70,7 +70,7 @@ namespace MagicBot
                 }
                 else
                 {
-                    messageText = card.GetTelegramText();
+                    messageText = card.GetTelegramTextFormatted();
                 }
 
                 {
