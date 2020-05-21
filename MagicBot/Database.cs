@@ -452,5 +452,42 @@ namespace MagicBot
 
         }
         #endregion
+
+        #region Delete Methods
+        async public static Task<int> DeleteFromChat(Chat chat)
+        {
+            return await DeleteFromChat(chat.Id);
+        }
+        async public static Task<int> DeleteFromChat(long chatId)
+        {
+            int result;
+            using (MySqlConnection conn = new MySqlConnection(_connectionString))
+            {
+                if (conn.State != ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                }
+                using (MySqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"DELETE FROM Chat
+                                        WHERE ChatId = @ChatId";
+
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@ChatId",
+                        DbType = DbType.Int64,
+                        Value = chatId,
+                    });
+
+                    result = await cmd.ExecuteNonQueryAsync();
+                }
+                if (conn.State == ConnectionState.Open)
+                {
+                    conn.Close();
+                }
+                return result;
+            }
+        }
+        #endregion
     }
 }

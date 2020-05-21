@@ -113,7 +113,7 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
-                    //await TwitterController.PublishNewImage(newItem);
+                    await TwitterController.PublishNewImage(newItem);
                 }
                 catch (Exception ex)
                 {

@@ -120,22 +120,26 @@ namespace MagicBot
             {
                 if (ex.Message.Contains("bot was kicked"))
                 {
-                    Program.WriteLine(String.Format("Bot was kicked from group {0}, consider deletting him from the database on table Chats", chat.Id));
+                    Program.WriteLine(String.Format("Bot was kicked from group {0}, deleting him from chat table", chat.Id));
+                    await Database.DeleteFromChat(chat);
                     return;
                 }
                 else if (ex.Message.Contains("bot was blocked by the user"))
                 {
-                    Program.WriteLine(String.Format("Bot was blocked by user {0}, consider deletting him from the database on table Chats", chat.Id));
+                    Program.WriteLine(String.Format("Bot was blocked by user {0}, deleting him from chat table", chat.Id));
+                    await Database.DeleteFromChat(chat);
                     return;
                 }
                 else if (ex.Message.Contains("user is deactivated"))
                 {
-                    Program.WriteLine(String.Format("User {0} deactivated, consider deletting him from the database on table Chats", chat.Id));
+                    Program.WriteLine(String.Format("User {0} deactivated, deleting him from chat table", chat.Id));
+                    await Database.DeleteFromChat(chat);
                     return;
                 }
                 else if (ex.Message.Contains("chat not found"))
                 {
-                    Program.WriteLine(String.Format("Chat {0} not found, consider deletting him from the database on table Chats", chat.Id));
+                    Program.WriteLine(String.Format("Chat {0} not found, deleting him from chat table", chat.Id));
+                    await Database.DeleteFromChat(chat);
                     return;
                 }
                 else
