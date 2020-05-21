@@ -113,7 +113,7 @@ namespace MagicBot
                 Program.WriteLine(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
-                    await TwitterController.PublishNewImage(newItem);
+                    //await TwitterController.PublishNewImage(newItem);
                 }
                 catch (Exception ex)
                 {
@@ -129,7 +129,11 @@ namespace MagicBot
                 }
                 catch (Exception ex)
                 {
-                    await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
+                    try
+                    {
+                        await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
+                    }
+                    catch { } //if there is any error here, we don't wanna stop the bot
                     Program.WriteLine(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
                     Program.WriteLine(ex.Message);
                     Program.WriteLine(ex.StackTrace);

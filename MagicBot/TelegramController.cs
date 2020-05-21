@@ -133,21 +133,34 @@ namespace MagicBot
                     Program.WriteLine(String.Format("User {0} deactivated, consider deletting him from the database on table Chats", chat.Id));
                     return;
                 }
+                else if (ex.Message.Contains("chat not found"))
+                {
+                    Program.WriteLine(String.Format("Chat {0} not found, consider deletting him from the database on table Chats", chat.Id));
+                    return;
+                }
                 else
                 {
-                    await Database.InsertLog($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}, user: {chat.FirstName} group: {chat.Title}", card.Name, ex.ToString());
-                    Program.WriteLine(ex.Message);
-                    if (!String.IsNullOrEmpty(chat.FirstName))
+                    try
                     {
-                        Program.WriteLine("Name: " + chat.FirstName);
-                    }
-                    if (!String.IsNullOrEmpty(chat.Title))
-                    {
-                        Program.WriteLine("Title: " + chat.Title);
-                    }
+                        await Database.InsertLog($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}, user: {chat.FirstName} group: {chat.Title}", card.Name, ex.ToString());
+                        Program.WriteLine(ex.Message);
+                        if (!String.IsNullOrEmpty(chat.FirstName))
+                        {
+                            Program.WriteLine("Name: " + chat.FirstName);
+                        }
+                        if (!String.IsNullOrEmpty(chat.Title))
+                        {
+                            Program.WriteLine("Title: " + chat.Title);
+                        }
 
-                    await _botClient.SendTextMessageAsync(23973855, $"Error on {card.FullUrlWebSite} image: {card.ImageUrl} user: {chat.FirstName} group: {chat.Title}");
-                    Program.WriteLine(ex.StackTrace);
+                        await _botClient.SendTextMessageAsync(23973855, $"Error on {card.FullUrlWebSite} image: {card.ImageUrl} user: {chat.FirstName} group: {chat.Title}");
+                        Program.WriteLine(ex.StackTrace);
+                        return;
+                    }
+                    catch
+                    {
+                        Program.WriteLine("Error on SendSpoilToChat catch clause");
+                    } //if there is any error here, we do not want to stop sending the other cards, so just an empty catch
                 }
             }
         }
