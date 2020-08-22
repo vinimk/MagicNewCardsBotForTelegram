@@ -216,7 +216,7 @@ namespace MagicNewCardsBot
 
         public String GetTwitterText()
         {
-            string text =  GetTelegramText() +" #MTG #MagicTheGathering";
+            string text = GetTelegramText() + " #MTG #MagicTheGathering";
             if (text.Length < 240)
             {
                 return text;

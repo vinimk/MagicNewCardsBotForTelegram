@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MagicNewCardsBot
+﻿namespace MagicNewCardsBot
 {
     public class WorkerOptions
     {
@@ -19,5 +15,6 @@ namespace MagicNewCardsBot
         public string TwitterAcessToken { get; set; }
         public string TwitterAcessTokenSecret { get; set; }
         public long TelegramDebugUserID { get; set; }
+        public bool IsDebugMode { get; set; }
     }
 }

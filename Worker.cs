@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MagicNewCardsBot
 {
@@ -22,14 +19,21 @@ namespace MagicNewCardsBot
             Utils.SetLogger(this.logger);
 
             Utils.LogInformation("Initializing");
+            Utils.LogInformation($"DebugMode: {options.IsDebugMode}");
 
+            _isDebugMode = options.IsDebugMode;
             _tasker = new MTGPicsTasker();
 
             TimeInternalMS = options.TimeExecuteIntervalInMs;
 
             Database.SetConnectionString(options.ConnectionStringMySQL);
 
-            TelegramController = new TelegramController(options.TelegramBotApiKey, options.TelegramDebugUserID);
+            if (_isDebugMode)
+                TelegramController = new TelegramController(options.TelegramBotApiKey, options.TelegramDebugUserID);
+            else
+                TelegramController = new TelegramController(options.TelegramBotApiKey);
+
+
 
             TwitterController = new TwitterController(options.TwitterConsumerKey, options.TwitterConsumerSecret, options.TwitterAcessToken, options.TwitterAcessTokenSecret);
 
@@ -76,17 +80,16 @@ namespace MagicNewCardsBot
 
         async private static Task SendAndTweetCard(Card newItem)
         {
-
             if (newItem.ImageUrl != null)
             {
-                if (!Debugger.IsAttached)
+                if (!_isDebugMode)
                     await Database.UpdateIsSent(newItem, true);
 
                 Utils.LogInformation(String.Format("Tweeting new card {0}", newItem.Name));
                 try
                 {
-                    if (!Debugger.IsAttached)
-                        TwitterController.PublishNewImage(newItem);
+                    if (!_isDebugMode)
+                        _ = TwitterController.PublishNewImage(newItem);
                 }
                 catch (Exception ex)
                 {
@@ -98,7 +101,7 @@ namespace MagicNewCardsBot
 
                 try
                 {
-                    TelegramController.SendImageToAll(newItem);
+                    _ = TelegramController.SendImageToAll(newItem);
                 }
                 catch (Exception ex)
                 {
@@ -120,6 +123,7 @@ namespace MagicNewCardsBot
         private static TelegramController _telegramController;
         private static TwitterController _twitterController;
         private static int _timeInternalMS;
+        private static bool _isDebugMode;
 
         public static int TimeInternalMS { get => _timeInternalMS; set => _timeInternalMS = value; }
         public static TwitterController TwitterController { get => _twitterController; set => _twitterController = value; }

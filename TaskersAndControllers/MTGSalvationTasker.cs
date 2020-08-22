@@ -84,7 +84,7 @@ namespace MagicNewCardsBot
             if (cardInDb == false)
             {
                 card = await GetAdditionalInfo(card);
-                if (await checkImage(card))
+                if (await CheckImage(card))
                 {
                     //adds in the database
                     await Database.InsertScryfallCard(card);
@@ -95,21 +95,17 @@ namespace MagicNewCardsBot
             }
         }
 
-        async private Task<bool> checkImage(Card card)
+        async private Task<bool> CheckImage(Card card)
         {
             try
             {
-                using (var webClient = new WebClient())
-                {
-                    var downloadedData = await webClient.DownloadDataTaskAsync(card.ImageUrl);
-                    using (Image<Rgba32> image = Image.Load(downloadedData))
-                    {
-                        if (image.Width > 100 || image.Height > 100)
-                            return true;
-                        else
-                            return false;
-                    }
-                }
+                using var webClient = new WebClient();
+                var downloadedData = await webClient.DownloadDataTaskAsync(card.ImageUrl);
+                using Image<Rgba32> image = Image.Load(downloadedData);
+                if (image.Width > 100 || image.Height > 100)
+                    return true;
+                else
+                    return false;
             }
             catch
             {
@@ -174,11 +170,12 @@ namespace MagicNewCardsBot
             string[] colonItems = rawResponse.Trim().Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
             if (colonItems.Length > 1)
             {
-                string currentKey = colonItems[0], currentValue = "";
+                string currentKey = colonItems[0];
                 for (int i = 1; i < colonItems.Length; i++)
                 {
                     string currentItem = colonItems[i];
                     int spaceIndex = currentItem.LastIndexOf(" ");
+                    string currentValue;
                     if (spaceIndex < 0)
                     {
                         //end of string, whole item is the value
@@ -201,11 +198,10 @@ namespace MagicNewCardsBot
 
         #region Events
         public delegate void NewCard(object sender, Card newItem);
-        public event NewCard eventNewcard;
+        public event NewCard EventNewcard;
         protected virtual void OnNewCard(Card args)
         {
-            if (eventNewcard != null)
-                eventNewcard(this, args);
+            EventNewcard?.Invoke(this, args);
         }
         #endregion
     }

@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot.Args;
@@ -14,7 +13,7 @@ namespace MagicNewCardsBot
         private readonly string _telegramBotApiKey;
         private readonly Telegram.Bot.TelegramBotClient _botClient;
         private int _offset;
-        private readonly long? _idUserDebug; 
+        private readonly long? _idUserDebug;
         #endregion
 
         #region Constructors
@@ -25,6 +24,7 @@ namespace MagicNewCardsBot
             _offset = 0;
             _idUserDebug = IdUserDebug;
         }
+
         #endregion
 
         #region Public Methods
@@ -35,17 +35,15 @@ namespace MagicNewCardsBot
 
         async public Task SendImageToAll(Card card)
         {
-            if (Debugger.IsAttached)
-            {
-                SendSpoilToChat(card, new Chat { Id = _idUserDebug.Value, Type = Telegram.Bot.Types.Enums.ChatType.Private, Title = "test", FirstName = "test" });
-            }
+            if (_idUserDebug.HasValue)
+                _ = SendSpoilToChat(card, new Chat { Id = _idUserDebug.Value, Type = Telegram.Bot.Types.Enums.ChatType.Private, Title = "test", FirstName = "test" });
             else
             {
                 //goes trough all the chats and send a message for each one
                 await foreach (Chat chat in Database.GetAllChats())
                 {
-                    Utils.LogInformation($"Sending{card.ToString()} to {chat.Id}");
-                    SendSpoilToChat(card, chat);
+                    Utils.LogInformation($"Sending{card} to {chat.Id}");
+                    _ = SendSpoilToChat(card, chat);
                 }
             }
         }

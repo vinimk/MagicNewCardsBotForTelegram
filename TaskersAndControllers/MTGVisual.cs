@@ -2,7 +2,6 @@ using HtmlAgilityPack;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -43,9 +42,11 @@ namespace MagicNewCardsBot
                     var nodes = doc.DocumentNode.SelectNodes(".//div[@class='spoiler-set-card']");
                     foreach (var node in nodes)
                     {
-                        Card card = new Card();
-                        card.Name = node.SelectSingleNode(".//a[@rel='bookmark']")?.Attributes["title"]?.Value;
-                        card.ImageUrl = node.SelectSingleNode(".//img[contains(@class,'attachment-set-card')]")?.Attributes["src"]?.Value;
+                        Card card = new Card
+                        {
+                            Name = node.SelectSingleNode(".//a[@rel='bookmark']")?.Attributes["title"]?.Value,
+                            ImageUrl = node.SelectSingleNode(".//img[contains(@class,'attachment-set-card')]")?.Attributes["src"]?.Value
+                        };
                         await CheckCard(card);
                     }
 
@@ -74,7 +75,7 @@ namespace MagicNewCardsBot
             if (cardInDb == false)
             {
                 card = await GetAdditionalInfo(card);
-                if (await checkImage(card))
+                if (await CheckImage(card))
                 {
                     //adds in the database
                     await Database.InsertScryfallCard(card);
@@ -85,21 +86,17 @@ namespace MagicNewCardsBot
             }
         }
 
-        async private Task<bool> checkImage(Card card)
+        async private Task<bool> CheckImage(Card card)
         {
             try
             {
-                using (var webClient = new WebClient())
-                {
-                    var downloadedData = await webClient.DownloadDataTaskAsync(card.ImageUrl);
-                    using (Image<Rgba32> image = Image.Load(downloadedData))
-                    {
-                        if (image.Width > 100 || image.Height > 100)
-                            return true;
-                        else
-                            return false;
-                    }
-                }
+                using var webClient = new WebClient();
+                var downloadedData = await webClient.DownloadDataTaskAsync(card.ImageUrl);
+                using Image<Rgba32> image = Image.Load(downloadedData);
+                if (image.Width > 100 || image.Height > 100)
+                    return true;
+                else
+                    return false;
             }
             catch
             {
@@ -158,44 +155,14 @@ namespace MagicNewCardsBot
         }
 
 
-        private List<KeyValuePair<string, string>> ParsePrinterResponse(string rawResponse)
-        {
-            List<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>();
-            string[] colonItems = rawResponse.Trim().Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
-            if (colonItems.Length > 1)
-            {
-                string currentKey = colonItems[0], currentValue = "";
-                for (int i = 1; i < colonItems.Length; i++)
-                {
-                    string currentItem = colonItems[i];
-                    int spaceIndex = currentItem.LastIndexOf(" ");
-                    if (spaceIndex < 0)
-                    {
-                        //end of string, whole item is the value
-                        currentValue = currentItem;
-                    }
-                    else
-                    {
-                        //middle of string, left part is value, right part is next key
-                        currentValue = currentItem.Substring(0, spaceIndex);
-                    }
-                    pairs.Add(new KeyValuePair<string, string>(currentKey, currentValue));
-                    currentKey = currentItem.Substring(spaceIndex + 1);
-                }
-            }
-            return pairs;
-        }
-
-
         #endregion
 
         #region Events
         public delegate void NewCard(object sender, Card newItem);
-        public event NewCard eventNewcard;
+        public event NewCard EventNewcard;
         protected virtual void OnNewCard(Card args)
         {
-            if (eventNewcard != null)
-                eventNewcard(this, args);
+            EventNewcard?.Invoke(this, args);
         }
         #endregion
     }

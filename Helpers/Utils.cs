@@ -8,7 +8,7 @@ namespace MagicNewCardsBot
 {
     public static class Utils
     {
-        private static  ILogger<Worker> logger;
+        private static ILogger<Worker> logger;
         async public static Task<Stream> GetStreamFromUrlAsync(string url)
         {
             //do a webrequest to get the image
