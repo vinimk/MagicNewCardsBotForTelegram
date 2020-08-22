@@ -1,7 +1,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 
-namespace MagicBot
+namespace MagicNewCardsBot
 {
     public class ScryfallCard : Card
     {

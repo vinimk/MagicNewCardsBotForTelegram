@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
 
-namespace MagicBot
+namespace MagicNewCardsBot
 {
 
     public class TwitterController
@@ -35,7 +35,7 @@ namespace MagicBot
 
             //loads the image and sends it
 
-            byte[] byteImage = await Program.GetByteArrayFromUrlAsync(card.ImageUrl);
+            byte[] byteImage = await Utils.GetByteArrayFromUrlAsync(card.ImageUrl);
             IMedia mainImage = Upload.UploadBinary(byteImage);
             lstImages.Add(mainImage);
 
@@ -44,7 +44,7 @@ namespace MagicBot
             {
                 foreach (Card extraCard in card.ExtraSides)
                 {
-                    byte[] extraByteImage = await Program.GetByteArrayFromUrlAsync(extraCard.ImageUrl);
+                    byte[] extraByteImage = await Utils.GetByteArrayFromUrlAsync(extraCard.ImageUrl);
                     IMedia extraImage = Upload.UploadBinary(extraByteImage);
                     lstImages.Add(extraImage);
                 }

@@ -2,12 +2,13 @@ using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace MagicBot
+namespace MagicNewCardsBot
 {
     public class MTGPicsTasker : Tasker
     {
@@ -26,13 +27,13 @@ namespace MagicBot
 
                 HtmlDocument doc = new HtmlDocument();
                 //crawl the webpage to get this information
-                using (Stream stream = await Program.GetStreamFromUrlAsync(set.URL))
+                using (Stream stream = await Utils.GetStreamFromUrlAsync(set.URL))
                 {
                     doc.Load(stream);
                 }
 
                 //all the cards are a a href so we get all of that
-                HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//div[@class='S12']");
+                HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//td[@valign='middle']");
                 if (nodesCards != null)
                 {
                     int crawlsFromThisSite = 0;
@@ -40,7 +41,8 @@ namespace MagicBot
                     {
                         var nodeImageCard = node.SelectSingleNode(".//img");
                         //also the cards have a special class called 'card', so we use it to get the right ones
-                        if (nodeImageCard.Attributes.Contains("src") &&
+                        if (nodeImageCard != null &&
+                            nodeImageCard.Attributes.Contains("src") &&
                             nodeImageCard.Attributes["src"].Value.ToString().EndsWith(".jpg"))
                         {
                             string cardUrl = nodeImageCard.ParentNode.Attributes["href"].Value.ToString();
@@ -60,9 +62,9 @@ namespace MagicBot
                                 ImageUrl = imageUrl
                             };
                             yield return card;
+                            crawlsFromThisSite++;
                         }
 
-                        crawlsFromThisSite++;
                         //only get the lastest 50
                         if (crawlsFromThisSite == Database.MAX_CARDS)
                             break;
@@ -79,7 +81,7 @@ namespace MagicBot
             {
                 HtmlDocument html = new HtmlDocument();
                 //crawl the webpage to get this information
-                using (Stream stream = await Program.GetStreamFromUrlAsync(spoil.FullUrlWebSite))
+                using (Stream stream = await Utils.GetStreamFromUrlAsync(spoil.FullUrlWebSite))
                 {
                     html.Load(stream, Encoding.GetEncoding("ISO-8859-1"));
                 }

@@ -1,4 +1,4 @@
-namespace MagicBot
+namespace MagicNewCardsBot
 {
     //public class MythicApiTasker : Tasker
     //{

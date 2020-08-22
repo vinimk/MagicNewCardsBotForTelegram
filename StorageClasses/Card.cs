@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 
-namespace MagicBot
+namespace MagicNewCardsBot
 {
     public class Card
     {

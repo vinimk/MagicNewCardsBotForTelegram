@@ -1,5 +1,5 @@
 using System;
-namespace MagicBot
+namespace MagicNewCardsBot
 {
     public class Set
     {

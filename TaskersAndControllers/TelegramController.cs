@@ -1,12 +1,11 @@
 using System;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.InputFiles;
 
-namespace MagicBot
+namespace MagicNewCardsBot
 {
 
     public class TelegramController
@@ -15,14 +14,16 @@ namespace MagicBot
         private readonly string _telegramBotApiKey;
         private readonly Telegram.Bot.TelegramBotClient _botClient;
         private int _offset;
+        private readonly long? _idUserDebug; 
         #endregion
 
         #region Constructors
-        public TelegramController(String apiKey)
+        public TelegramController(String apiKey, long? IdUserDebug = null)
         {
             _telegramBotApiKey = apiKey;
             _botClient = new Telegram.Bot.TelegramBotClient(_telegramBotApiKey);
             _offset = 0;
+            _idUserDebug = IdUserDebug;
         }
         #endregion
 
@@ -34,11 +35,18 @@ namespace MagicBot
 
         async public Task SendImageToAll(Card card)
         {
-            //goes trough all the chats and send a message for each one
-            await foreach (Chat chat in Database.GetAllChats())
+            if (Debugger.IsAttached)
             {
-                Program.WriteLine($"Sending{card.ToString()} to {chat.Id}");
-                await SendSpoilToChat(card, chat);
+                SendSpoilToChat(card, new Chat { Id = _idUserDebug.Value, Type = Telegram.Bot.Types.Enums.ChatType.Private, Title = "test", FirstName = "test" });
+            }
+            else
+            {
+                //goes trough all the chats and send a message for each one
+                await foreach (Chat chat in Database.GetAllChats())
+                {
+                    Utils.LogInformation($"Sending{card.ToString()} to {chat.Id}");
+                    SendSpoilToChat(card, chat);
+                }
             }
         }
 
@@ -120,25 +128,25 @@ namespace MagicBot
             {
                 if (ex.Message.Contains("bot was kicked"))
                 {
-                    Program.WriteLine(String.Format("Bot was kicked from group {0}, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(String.Format("Bot was kicked from group {0}, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChat(chat);
                     return;
                 }
                 else if (ex.Message.Contains("bot was blocked by the user"))
                 {
-                    Program.WriteLine(String.Format("Bot was blocked by user {0}, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(String.Format("Bot was blocked by user {0}, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChat(chat);
                     return;
                 }
                 else if (ex.Message.Contains("user is deactivated"))
                 {
-                    Program.WriteLine(String.Format("User {0} deactivated, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(String.Format("User {0} deactivated, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChat(chat);
                     return;
                 }
                 else if (ex.Message.Contains("chat not found"))
                 {
-                    Program.WriteLine(String.Format("Chat {0} not found, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(String.Format("Chat {0} not found, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChat(chat);
                     return;
                 }
@@ -147,23 +155,23 @@ namespace MagicBot
                     try
                     {
                         await Database.InsertLog($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}, user: {chat.FirstName} group: {chat.Title}", card.Name, ex.ToString());
-                        Program.WriteLine(ex.Message);
+                        Utils.LogInformation(ex.Message);
                         if (!String.IsNullOrEmpty(chat.FirstName))
                         {
-                            Program.WriteLine("Name: " + chat.FirstName);
+                            Utils.LogInformation("Name: " + chat.FirstName);
                         }
                         if (!String.IsNullOrEmpty(chat.Title))
                         {
-                            Program.WriteLine("Title: " + chat.Title);
+                            Utils.LogInformation("Title: " + chat.Title);
                         }
 
                         await _botClient.SendTextMessageAsync(23973855, $"Error on {card.FullUrlWebSite} image: {card.ImageUrl} user: {chat.FirstName} group: {chat.Title}");
-                        Program.WriteLine(ex.StackTrace);
+                        Utils.LogError(ex.StackTrace);
                         return;
                     }
                     catch
                     {
-                        Program.WriteLine("Error on SendSpoilToChat catch clause");
+                        Utils.LogError("Error on SendSpoilToChat catch clause");
                     } //if there is any error here, we do not want to stop sending the other cards, so just an empty catch
                 }
             }
@@ -214,8 +222,8 @@ namespace MagicBot
             }
             catch (Exception ex)
             {
-                Program.WriteLine(ex.Message);
-                Program.WriteLine(ex.StackTrace);
+                Utils.LogError(ex.Message);
+                Utils.LogError(ex.StackTrace);
             }
         }
 
@@ -228,7 +236,7 @@ namespace MagicBot
                 //if it isn't adds it
                 await Database.InsertChat(chat);
                 await _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable");
-                Program.WriteLine(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
+                Utils.LogInformation(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
             }
         }
         #endregion
@@ -243,15 +251,15 @@ namespace MagicBot
                     args.Update.Message != null &&
                     args.Update.Message.Chat != null)
                 {
-                    Program.WriteLine(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
+                    Utils.LogInformation(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
                     AddIfNeeded(args.Update.Message.Chat).Wait();
                     _offset = args.Update.Id;
                 }
             }
             catch (Exception ex)
             {
-                Program.WriteLine(ex.Message);
-                Program.WriteLine(ex.StackTrace);
+                Utils.LogError(ex.Message);
+                Utils.LogError(ex.StackTrace);
             }
 
         }

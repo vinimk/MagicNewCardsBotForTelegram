@@ -1,20 +1,16 @@
-using CodeHollow.FeedReader;
 using HtmlAgilityPack;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace MagicBot
+namespace MagicNewCardsBot
 {
-    public class MTGSalvationTasker
+    public class MTGVisualTasker
     {
-        internal readonly String _apiUrl = "https://www.mtgsalvation.com/spoilers.rss";
-        public MTGSalvationTasker()
+        public MTGVisualTasker()
         { }
 
         #region Public Methods
@@ -30,49 +26,43 @@ namespace MagicBot
         async private Task CheckNewCards()
         {
             //get the aditional infos from the website
-            List<Card> lstCards = await GetAvaliableCardsInWebSite();
-            for (int i = 0; i < Database.MAX_CARDS; i++)
-            {
-                if (i < lstCards.Count)
-                {
-                    Card card = lstCards[i];
-                    await CheckCard(card);
-                }
-            }
+            await GetAndProcessAvaliableCardsInWebSite();
         }
 
-        async private Task<List<Card>> GetAvaliableCardsInWebSite()
+        async private Task GetAndProcessAvaliableCardsInWebSite()
         {
-            var cards = new List<Card>();
-            var feed = await FeedReader.ReadAsync(this._apiUrl);
-
-            foreach (var item in feed.Items)
+            var sets = await Database.GetAllCrawlableSets();
+            foreach (var set in sets)
             {
-                var withoutBr = item.Description.Replace("<br>", string.Empty).Replace("Rules Text:", "Text:");
-                string plainText = HtmlToText.ConvertHtml(withoutBr);
-                string content = Regex.Replace(plainText, @"\r\n?|\n", " ");
-
-                var kvps = ParsePrinterResponse(content);
-
-                var name = kvps.Where(x => x.Key == "Name").Select(x => x.Value).FirstOrDefault();
-                var cost = kvps.Where(x => x.Key == "Cost").Select(x => x.Value).FirstOrDefault();
-                var type = kvps.Where(x => x.Key == "Type").Select(x => x.Value).FirstOrDefault();
-                var text = kvps.Where(x => x.Key == "Text").Select(x => x.Value).FirstOrDefault();
-                var set = kvps.Where(x => x.Key == "Set").Select(x => x.Value).FirstOrDefault();
-
-
-                cards.Add(new Card
+                try
                 {
-                    FullUrlWebSite = item.Link,
-                    Name = name,
-                    ManaCost = cost,
-                    Type = type,
-                    Text = text,
-                    Set = set,
-                });
+                    //loads the website
+                    HtmlWeb htmlWeb = new HtmlWeb();
+                    HtmlDocument doc = await htmlWeb.LoadFromWebAsync(set.URL);
+
+                    var nodes = doc.DocumentNode.SelectNodes(".//div[@class='spoiler-set-card']");
+                    foreach (var node in nodes)
+                    {
+                        Card card = new Card();
+                        card.Name = node.SelectSingleNode(".//a[@rel='bookmark']")?.Attributes["title"]?.Value;
+                        card.ImageUrl = node.SelectSingleNode(".//img[contains(@class,'attachment-set-card')]")?.Attributes["src"]?.Value;
+                        await CheckCard(card);
+                    }
+
+                }
+
+
+                catch (Exception ex)
+                {
+                    Database.InsertLog("Error crawling page: " + set.URL, String.Empty, ex.ToString()).Wait();
+                    Utils.LogInformation("Error crawling the main page");
+                    Utils.LogInformation(ex.Message);
+                    Utils.LogInformation(ex.StackTrace);
+                }
             }
 
-            return cards;
+
+
         }
 
 

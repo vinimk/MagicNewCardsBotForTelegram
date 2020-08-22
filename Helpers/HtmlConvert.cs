@@ -1,9 +1,8 @@
 ﻿using HtmlAgilityPack;
 using System.IO;
 
-namespace MagicBot
+namespace MagicNewCardsBot
 {
-
     public static class HtmlToText
     {
         #region Public Methods
