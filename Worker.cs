@@ -89,7 +89,7 @@ namespace MagicNewCardsBot
                 try
                 {
                     if (!_isDebugMode)
-                        _ = TwitterController.PublishNewImage(newItem);
+                        await TwitterController.PublishNewImage(newItem);
                 }
                 catch (Exception ex)
                 {
