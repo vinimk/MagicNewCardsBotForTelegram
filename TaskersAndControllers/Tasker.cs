@@ -27,11 +27,6 @@ namespace MagicNewCardsBot
         }
         #endregion
 
-        #region Private Methods
-
-
-
-        #endregion
 
         #region Abstract methods
         abstract protected Task GetAdditionalInfo(Card spoil);

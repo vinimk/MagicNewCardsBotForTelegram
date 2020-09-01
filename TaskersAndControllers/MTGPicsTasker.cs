@@ -1,7 +1,9 @@
 using HtmlAgilityPack;
+using MagicNewCardsBot.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -72,19 +74,130 @@ namespace MagicNewCardsBot
             }
         }
 
+        private void processFieldByType(IList<HtmlNode> nodes, Card mainCard, CardFields field)
+        {
 
-        async override protected Task GetAdditionalInfo(Card spoil)
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                try
+                {
+                    var node = nodes[i];
+                    Card card;
+                    if (i == 0)
+                        card = mainCard;
+                    else
+                        card = mainCard.ExtraSides[i - 1];
+
+                    switch (field)
+                    {
+                        case CardFields.Name:
+                            card.Name = node.InnerText.Trim();
+                            break;
+
+                        case CardFields.ManaCost:
+                            string totalCost = String.Empty;
+                            foreach (var childNode in node.ChildNodes)
+                            {
+                                string imgUrl = childNode.Attributes["src"].Value;
+                                if (imgUrl.EndsWith(".png"))
+                                {
+                                    int lastIndex = imgUrl.LastIndexOf('/');
+                                    string cost = imgUrl.Substring(lastIndex + 1);
+                                    cost = cost.Replace(".png", String.Empty);
+                                    totalCost += cost.Trim().ToUpper();
+                                }
+                            }
+                            if (!String.IsNullOrEmpty(totalCost))
+                            {
+                                card.ManaCost = totalCost;
+                            }
+                            break;
+                        case CardFields.Type:
+                            string type = node.InnerText;
+                            type = type.Replace("\u0097", "-");
+                            type = System.Net.WebUtility.HtmlDecode(type);
+                            type = type.Trim();
+
+                            if (!String.IsNullOrEmpty(type))
+                                card.Type = type;
+
+                            break;
+                        case CardFields.Text:
+                            StringBuilder sb = new StringBuilder();
+                            foreach (var childNode in node.ChildNodes)
+                            {
+                                if (childNode.Attributes != null)
+                                {
+                                    if (childNode.Attributes["alt"] != null)
+                                    {
+                                        string symbol = childNode.Attributes["alt"].Value;
+                                        symbol = symbol.Replace("%", "");
+                                        sb.Append(symbol.ToUpper());
+                                        continue;
+                                    }
+                                    else if (childNode.Attributes["onclick"] != null && childNode.Attributes["onclick"].Value.Contains("LoadGlo"))
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                string text = childNode.InnerText.Replace("\u0095", "•");
+                                text = text.Replace("\u0097", "-");
+                                text = text.Replace("\n\t\t\t", String.Empty);
+                                text = text.Replace("  ", " ");
+                                text = WebUtility.HtmlDecode(text);
+
+                                sb.Append(text);
+                            }
+
+                            string sbString = sb.ToString();
+                            if (!String.IsNullOrEmpty(sbString))
+                                card.Text = sbString;
+
+                            break;
+                        case CardFields.PT:
+                            foreach (var childNodes in node.ChildNodes)
+                            {
+                                var text = childNodes.InnerText.Trim();
+                                text = text.Replace("\n", String.Empty);
+                                if (text.Contains("/"))
+                                {
+                                    String[] arrPt = text.Split('/');
+                                    if (arrPt.Length == 2)
+                                    {
+                                        card.Power = arrPt[0];
+                                        card.Toughness = arrPt[1];
+                                        break;
+                                    }
+                                }
+                                else if (text.Contains("Loyalty:") || text.Contains("Loyalty :"))
+                                {
+                                    string numbersOnly = Regex.Replace(text, "[^0-9]", "");
+                                    card.Loyalty = Convert.ToInt32(numbersOnly);
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                catch { }
+            }
+        }
+
+        async override protected Task GetAdditionalInfo(Card card)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
             {
                 HtmlDocument html = new HtmlDocument();
                 //crawl the webpage to get this information
-                using (Stream stream = await Utils.GetStreamFromUrlAsync(spoil.FullUrlWebSite))
+                using (Stream stream = await Utils.GetStreamFromUrlAsync(card.FullUrlWebSite))
                 {
                     html.Load(stream, Encoding.GetEncoding("ISO-8859-1"));
                 }
 
+                //IMAGE
                 try
                 {
                     var nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScan']");
@@ -92,129 +205,76 @@ namespace MagicNewCardsBot
                     string urlNewImage = nodeImage.Attributes["src"].Value.ToString();
                     if (urlNewImage.Contains(_websiteUrl))
                     {
-                        spoil.ImageUrl = urlNewImage;
+                        card.ImageUrl = urlNewImage;
                     }
                 }
                 catch
                 { }
 
-                try
-                {
-                    var node = html.DocumentNode.SelectSingleNode(".//div[@class='Card20']");
-                    var name = node.InnerText.Trim();
-                    spoil.Name = name;
 
-                }
-                catch
-                { }
+                //SEE IF IT HAS EXTRA IMAGES
                 try
                 {
-                    string totalCost = String.Empty;
-                    var parentNode = html.DocumentNode.SelectSingleNode(".//div[@style='height:25px;float:right;']");
-                    foreach (var node in parentNode.ChildNodes)
+                    var nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScanBack']");
+                    if (nodeParent != null)
                     {
 
-                        string imgUrl = node.Attributes["src"].Value;
-                        if (imgUrl.EndsWith(".png"))
+                        var nodeImage = nodeParent.SelectSingleNode(".//img");
+                        string urlNewImage = nodeImage?.Attributes["src"].Value.ToString();
+                        if (!urlNewImage.Contains(_websiteUrl))
                         {
-                            int lastIndex = imgUrl.LastIndexOf('/');
-                            string cost = imgUrl.Substring(lastIndex + 1);
-                            cost = cost.Replace(".png", String.Empty);
-                            totalCost += cost.Trim().ToUpper();
+                            urlNewImage = _websiteUrl + urlNewImage;
                         }
 
-                    }
-                    if (!String.IsNullOrEmpty(totalCost))
-                    {
-                        spoil.ManaCost = totalCost;
-                    }
-
-                }
-                catch
-                { }
-
-
-                try
-                {
-                    var node = html.DocumentNode.SelectSingleNode(".//div[@class='CardG16']");
-                    string type = node.InnerText;
-                    type = type.Replace("\u0097", "-");
-                    type = System.Net.WebUtility.HtmlDecode(type);
-                    type = type.Trim();
-                    spoil.Type = type;
-                }
-                catch
-                { }
-
-
-                try
-                {
-                    var parentNode = html.DocumentNode.SelectSingleNode(".//div[@id='EngShort']");
-                    StringBuilder sb = new StringBuilder();
-                    foreach (var node in parentNode.ChildNodes)
-                    {
-                        if (node.Attributes != null)
+                        if (!string.IsNullOrEmpty(urlNewImage))
                         {
-                            if (node.Attributes["alt"] != null)
-                            {
-                                string symbol = node.Attributes["alt"].Value;
-                                symbol = symbol.Replace("%", "");
-                                sb.Append(symbol.ToUpper());
-                                continue;
-                            }
-                            else if (node.Attributes["onclick"] != null && node.Attributes["onclick"].Value.Contains("LoadGlo"))
-                            {
-                                continue;
-                            }
-                        }
+                            if (card.ExtraSides == null)
+                                card.ExtraSides = new List<Card>();
 
-                        string text = node.InnerText.Replace("\u0095", "•");
-                        text = text.Replace("\u0097", "-");
-                        text = text.Replace("\n\t\t\t", String.Empty);
-                        text = text.Replace("  ", " ");
-                        text = WebUtility.HtmlDecode(text);
+                            card.ExtraSides.Add(new Card() { ImageUrl = urlNewImage });
 
-                        sb.Append(text);
-                    }
-                    spoil.Text = sb.ToString();
-                }
-                catch
-                { }
-                try
-                {
-                    //spoil.Flavor = System.Net.WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[5]/td[1]/i[1]").LastChild.InnerText.Trim());
-                }
-                catch
-                { }
-
-                try
-                {
-                    var nodes = html.DocumentNode.SelectNodes(".//div[@class='CardG16']");
-
-                    foreach (var node in nodes)
-                    {
-                        var text = node.InnerText.Trim();
-                        text = text.Replace("\n", String.Empty);
-                        if (text.Contains("/"))
-                        {
-                            String[] arrPt = text.Split('/');
-                            if (arrPt.Length == 2)
-                            {
-                                spoil.Power = arrPt[0];
-                                spoil.Toughness = arrPt[1];
-                                break;
-                            }
-                        }
-                        else if (text.Contains("Loyalty:") || text.Contains("Loyalty :"))
-                        {
-                            string numbersOnly = Regex.Replace(text, "[^0-9]", "");
-                            spoil.Loyalty = Convert.ToInt32(numbersOnly);
                         }
                     }
-
                 }
                 catch
                 { }
+
+
+                //NAME
+                var nodes = html.DocumentNode.SelectNodes(".//div[@class='Card20']");
+
+                if (nodes != null)
+                    processFieldByType(nodes, card, CardFields.Name);
+
+                //MANA COST
+                nodes = html.DocumentNode.SelectNodes(".//div[@style='height:25px;float:right;']");
+
+                if (nodes != null)
+                    processFieldByType(nodes, card, CardFields.ManaCost);
+
+                //TEXT
+                nodes = html.DocumentNode.SelectNodes(".//div[@id='EngShort']");
+                if (nodes != null)
+                    processFieldByType(nodes, card, CardFields.Text);
+
+                var g16nodes = html.DocumentNode.SelectNodes(".//div[@class='CardG16']");
+
+                //TYPE 
+                var nodesType = g16nodes.Where(x => x.Attributes["style"] != null  &&
+                                                    x.Attributes["style"].Value.Trim().Equals("padding:5px 0px 5px 0px;") 
+                                                ).ToList();
+
+                if (nodesType != null)
+                    processFieldByType(nodesType, card, CardFields.Type);
+
+                //POWER AND TOUGHNESS AND LOYALTY
+                var nodesPT = g16nodes.Where(x => x.Attributes["align"] != null &&
+                                                !String.IsNullOrEmpty(x.InnerText.Trim()) &&
+                                                x.Attributes["align"].Value.Trim().Equals("right")).ToList();
+
+                if (nodesPT != null)
+                    processFieldByType(nodesPT, card, CardFields.PT);
+
             }
             catch
             { }

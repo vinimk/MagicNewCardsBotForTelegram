@@ -41,8 +41,15 @@ namespace MagicNewCardsBot
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await TelegramController.InitialUpdate();
-            TelegramController.HookUpdateEvent();
+            if (!_isDebugMode)
+            {
+                await TelegramController.InitialUpdate();
+                TelegramController.HookUpdateEvent();
+            }
+            else
+            {
+                Utils.LogInformation("********************* DEBUG MODE ****************");
+            }
 
 
             while (!stoppingToken.IsCancellationRequested)
@@ -85,11 +92,14 @@ namespace MagicNewCardsBot
                 if (!_isDebugMode)
                     await Database.UpdateIsSent(newItem, true);
 
-                Utils.LogInformation(String.Format("Tweeting new card {0}", newItem.Name));
+
                 try
                 {
                     if (!_isDebugMode)
+                    {
+                        Utils.LogInformation(String.Format("Tweeting new card {0}", newItem.Name));
                         await TwitterController.PublishNewImage(newItem);
+                    }
                 }
                 catch (Exception ex)
                 {
