@@ -12,18 +12,14 @@ namespace MagicNewCardsBot
         async public static Task<Stream> GetStreamFromUrlAsync(string url)
         {
             //do a webrequest to get the image
-            using (HttpClient client = new HttpClient())
-            {
-                return await client.GetStreamAsync(url);
-            }
+            using HttpClient client = new HttpClient();
+            return await client.GetStreamAsync(url);
         }
 
         async public static Task<byte[]> GetByteArrayFromUrlAsync(String url)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                return await client.GetByteArrayAsync(url);
-            }
+            using HttpClient client = new HttpClient();
+            return await client.GetByteArrayAsync(url);
         }
 
         public static void SetLogger(ILogger<Worker> log)
