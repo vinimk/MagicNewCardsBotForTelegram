@@ -80,14 +80,14 @@ namespace MagicNewCardsBot
         {
             //check if the spoil is in the database
             //if is not in the database AND has NOT been sent
-            var cardInDb = await Database.IsCardInDatabase(card, true);
+            var cardInDb = await Database.IsCardInDatabaseAsync(card, true);
             if (cardInDb == false)
             {
                 card = await GetAdditionalInfo(card);
                 if (await CheckImage(card))
                 {
                     //adds in the database
-                    await Database.InsertScryfallCard(card);
+                    await Database.InsertScryfallCardAsync(card);
 
                     //fires the event to do stuffs with the new object
                     OnNewCard(card);

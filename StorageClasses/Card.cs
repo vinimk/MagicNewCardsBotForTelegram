@@ -257,7 +257,7 @@ namespace MagicNewCardsBot
         {
             if (!String.IsNullOrWhiteSpace(Name))
             {
-                return $"{Name} - {FullUrlWebSite}";
+                return $"{Name}";
             }
             else
             {

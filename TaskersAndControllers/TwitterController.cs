@@ -33,7 +33,7 @@ namespace MagicNewCardsBot
         #endregion
 
         #region Public Methods
-        async public Task PublishNewImage(Card card)
+        async public Task TweetCardAsync(Card card)
         {
 
             List<IMedia> lstImages = new List<IMedia>();

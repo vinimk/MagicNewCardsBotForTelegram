@@ -28,22 +28,22 @@ namespace MagicNewCardsBot
         #endregion
 
         #region Public Methods
-        async public Task InitialUpdate()
+        async public Task InitialUpdateAsync()
         {
-            await GetInitialUpdateEvents();
+            await GetInitialUpdateEventsAsync();
         }
 
-        async public Task SendImageToAll(Card card)
+        async public Task SendImageToAllChatsAsync(Card card)
         {
             if (_idUserDebug.HasValue)
-                _ = SendSpoilToChat(card, new Chat { Id = _idUserDebug.Value, Type = Telegram.Bot.Types.Enums.ChatType.Private, Title = "test", FirstName = "test" });
+                _ = SendCardToChatAsync(card, new Chat { Id = _idUserDebug.Value, Type = Telegram.Bot.Types.Enums.ChatType.Private, Title = "test", FirstName = "test" });
             else
             {
                 //goes trough all the chats and send a message for each one
-                await foreach (Chat chat in Database.GetAllChats())
+                await foreach (Chat chat in Database.GetAllChatsAsync())
                 {
-                    Utils.LogInformation($"Sending{card} to {chat.Id}");
-                    _ = SendSpoilToChat(card, chat);
+                    Utils.LogInformation($"Sending {card} to {chat.Id}");
+                    _ = SendCardToChatAsync(card, chat);
                 }
             }
         }
@@ -61,7 +61,7 @@ namespace MagicNewCardsBot
 
         #region Private Methods
 
-        async private Task SendSpoilToChat(Card card, Chat chat)
+        async private Task SendCardToChatAsync(Card card, Chat chat)
         {
             try
             {
@@ -125,32 +125,38 @@ namespace MagicNewCardsBot
                 if (ex.Message.Contains("bot was kicked"))
                 {
                     Utils.LogInformation(String.Format("Bot was kicked from group {0}, deleting him from chat table", chat.Id));
-                    await Database.DeleteFromChat(chat);
+                    await Database.DeleteFromChatAsync(chat);
                     return;
                 }
                 else if (ex.Message.Contains("bot was blocked by the user"))
                 {
                     Utils.LogInformation(String.Format("Bot was blocked by user {0}, deleting him from chat table", chat.Id));
-                    await Database.DeleteFromChat(chat);
+                    await Database.DeleteFromChatAsync(chat);
                     return;
                 }
                 else if (ex.Message.Contains("user is deactivated"))
                 {
                     Utils.LogInformation(String.Format("User {0} deactivated, deleting him from chat table", chat.Id));
-                    await Database.DeleteFromChat(chat);
+                    await Database.DeleteFromChatAsync(chat);
                     return;
                 }
                 else if (ex.Message.Contains("chat not found"))
                 {
                     Utils.LogInformation(String.Format("Chat {0} not found, deleting him from chat table", chat.Id));
-                    await Database.DeleteFromChat(chat);
+                    await Database.DeleteFromChatAsync(chat);
+                    return;
+                }
+                else if (ex.Message.Contains("have no rights to send a message"))
+                {
+                    Utils.LogInformation(String.Format("Chat {0} not found, deleting him from chat table", chat.Id));
+                    await Database.DeleteFromChatAsync(chat);
                     return;
                 }
                 else
                 {
                     try
                     {
-                        await Database.InsertLog($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}, user: {chat.FirstName} group: {chat.Title}", card.Name, ex.ToString());
+                        await Database.InsertLogAsync($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}, user: {chat.FirstName} group: {chat.Title}", card.Name, ex.ToString());
                         Utils.LogInformation(ex.Message);
                         if (!String.IsNullOrEmpty(chat.FirstName))
                         {
@@ -161,7 +167,7 @@ namespace MagicNewCardsBot
                             Utils.LogInformation("Title: " + chat.Title);
                         }
 
-                        await _botClient.SendTextMessageAsync(23973855, $"Error on {card.FullUrlWebSite} image: {card.ImageUrl} user: {chat.FirstName} group: {chat.Title}");
+                        await _botClient.SendTextMessageAsync(23973855, $"Error on {card.FullUrlWebSite} image: {card.ImageUrl} user: {chat.FirstName} group: {chat.Title} id: {chat.Id}");
                         Utils.LogError(ex.StackTrace);
                         return;
                     }
@@ -173,7 +179,7 @@ namespace MagicNewCardsBot
             }
         }
 
-        async private Task GetInitialUpdateEvents()
+        async private Task GetInitialUpdateEventsAsync()
         {
             try
             {
@@ -208,12 +214,12 @@ namespace MagicNewCardsBot
                                 update.Message.Chat != null)
                             {
                                 //call the method to see if it is needed to add it to the database
-                                await AddIfNeeded(update.Message.Chat);
+                                await InsertInDbIfNotYetAddedAsync(update.Message.Chat);
                             }
                         }
                     }
                     //recursive call for offset checking
-                    await GetInitialUpdateEvents();
+                    await GetInitialUpdateEventsAsync();
                 }
             }
             catch (Exception ex)
@@ -223,14 +229,14 @@ namespace MagicNewCardsBot
             }
         }
 
-        async private Task AddIfNeeded(Chat chat)
+        async private Task InsertInDbIfNotYetAddedAsync(Chat chat)
         {
             //query the list to see if the chat is already in the database
-            bool isInDb = await Database.IsChatInDatabase(chat);
+            bool isInDb = await Database.ChatExistsAsync(chat);
             if (isInDb == false)
             {
                 //if it isn't adds it
-                await Database.InsertChat(chat);
+                await Database.InsertChatAsync(chat);
                 await _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable");
                 Utils.LogInformation(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
             }
@@ -248,7 +254,7 @@ namespace MagicNewCardsBot
                     args.Update.Message.Chat != null)
                 {
                     Utils.LogInformation(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
-                    AddIfNeeded(args.Update.Message.Chat).Wait();
+                    InsertInDbIfNotYetAddedAsync(args.Update.Message.Chat).Wait();
                     _offset = args.Update.Id;
                 }
             }

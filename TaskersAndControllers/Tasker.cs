@@ -8,20 +8,19 @@ namespace MagicNewCardsBot
 
         #region Public Methods
 
-        async public IAsyncEnumerable<Card> GetNewCards()
+        async public IAsyncEnumerable<Card> GetNewCardsAsync()
         {
             //get the aditional infos from the website
-            await foreach (Card card in GetAvaliableCardsInWebSite())
+            await foreach (Card card in GetAvaliableCardsInWebSiteAsync())
             {
-                var cardInDb = await Database.IsCardInDatabase(card, true);
+                var cardInDb = await Database.IsCardInDatabaseAsync(card, true);
                 if (cardInDb == false)
                 {
-                    await GetAdditionalInfo(card);
+                    await GetAdditionalInfoAsync(card);
                     //adds in the database
-                    await Database.InsertScryfallCard(card);
+                    await Database.InsertScryfallCardAsync(card);
 
                     yield return card;
-                    //fires the event to do stuffs with the new object
                 }
             }
         }
@@ -29,8 +28,8 @@ namespace MagicNewCardsBot
 
 
         #region Abstract methods
-        abstract protected Task GetAdditionalInfo(Card spoil);
-        abstract protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSite();
+        abstract protected Task GetAdditionalInfoAsync(Card card);
+        abstract protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync();
         #endregion
     }
 }

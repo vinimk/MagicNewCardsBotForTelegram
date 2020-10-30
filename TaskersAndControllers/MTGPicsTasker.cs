@@ -19,9 +19,9 @@ namespace MagicNewCardsBot
 
         #region Overrided Methods
 
-        async override protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSite()
+        async override protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
         {
-            List<Set> setsToCrawl = await Database.GetAllCrawlableSets();
+            List<Set> setsToCrawl = await Database.GetAllCrawlableSetsAsync();
             foreach (Set set in setsToCrawl)
             {
                 //loads the website
@@ -185,7 +185,7 @@ namespace MagicNewCardsBot
             }
         }
 
-        async override protected Task GetAdditionalInfo(Card card)
+        async override protected Task GetAdditionalInfoAsync(Card card)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try

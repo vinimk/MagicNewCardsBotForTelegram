@@ -30,7 +30,7 @@ namespace MagicNewCardsBot
 
         async private Task GetAndProcessAvaliableCardsInWebSite()
         {
-            var sets = await Database.GetAllCrawlableSets();
+            var sets = await Database.GetAllCrawlableSetsAsync();
             foreach (var set in sets)
             {
                 try
@@ -55,7 +55,7 @@ namespace MagicNewCardsBot
 
                 catch (Exception ex)
                 {
-                    Database.InsertLog("Error crawling page: " + set.URL, String.Empty, ex.ToString()).Wait();
+                    Database.InsertLogAsync("Error crawling page: " + set.URL, String.Empty, ex.ToString()).Wait();
                     Utils.LogInformation("Error crawling the main page");
                     Utils.LogInformation(ex.Message);
                     Utils.LogInformation(ex.StackTrace);
@@ -71,14 +71,14 @@ namespace MagicNewCardsBot
         {
             //check if the spoil is in the database
             //if is not in the database AND has NOT been sent
-            var cardInDb = await Database.IsCardInDatabase(card, true);
+            var cardInDb = await Database.IsCardInDatabaseAsync(card, true);
             if (cardInDb == false)
             {
                 card = await GetAdditionalInfo(card);
                 if (await CheckImage(card))
                 {
                     //adds in the database
-                    await Database.InsertScryfallCard(card);
+                    await Database.InsertScryfallCardAsync(card);
 
                     //fires the event to do stuffs with the new object
                     OnNewCard(card);

@@ -43,7 +43,7 @@ namespace MagicNewCardsBot
         {
             if (!_isDebugMode)
             {
-                await TelegramController.InitialUpdate();
+                await TelegramController.InitialUpdateAsync();
                 TelegramController.HookUpdateEvent();
             }
             else
@@ -59,9 +59,9 @@ namespace MagicNewCardsBot
                     //we get the new cards
                     //note that since we have a event handler for new cards, the event will be fired if a new card is found
                     Utils.LogInformation("Getting new cards");
-                    await foreach (Card newCard in _tasker.GetNewCards())
+                    await foreach (Card newCard in _tasker.GetNewCardsAsync())
                     {
-                        await SendAndTweetCard(newCard);
+                        await DistributeCardAsync(newCard);
                     }
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
@@ -72,7 +72,7 @@ namespace MagicNewCardsBot
                 {
                     try
                     {
-                        await Database.InsertLog("Getting new cards", String.Empty, ex.ToString());
+                        await Database.InsertLogAsync("Getting new cards", String.Empty, ex.ToString());
                         Utils.LogInformation(ex.ToString());
                     }
                     catch (Exception ex2)
@@ -85,12 +85,12 @@ namespace MagicNewCardsBot
             }
         }
 
-        async private static Task SendAndTweetCard(Card newItem)
+        async private static Task DistributeCardAsync(Card newItem)
         {
             if (newItem.ImageUrl != null)
             {
                 if (!_isDebugMode)
-                    await Database.UpdateIsSent(newItem, true);
+                    await Database.UpdateIsSentAsync(newItem, true);
 
 
                 try
@@ -98,12 +98,12 @@ namespace MagicNewCardsBot
                     if (!_isDebugMode)
                     {
                         Utils.LogInformation(String.Format("Tweeting new card {0}", newItem.Name));
-                        await TwitterController.PublishNewImage(newItem);
+                        await TwitterController.TweetCardAsync(newItem);
                     }
                 }
                 catch (Exception ex)
                 {
-                    await Database.InsertLog("Twitter send image", newItem.Name, ex.ToString());
+                    await Database.InsertLogAsync("Twitter send image", newItem.Name, ex.ToString());
                     Utils.LogInformation(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
                     Utils.LogInformation(ex.Message);
                     Utils.LogInformation(ex.StackTrace);
@@ -111,13 +111,13 @@ namespace MagicNewCardsBot
 
                 try
                 {
-                    _ = TelegramController.SendImageToAll(newItem);
+                    _ = TelegramController.SendImageToAllChatsAsync(newItem);
                 }
                 catch (Exception ex)
                 {
                     try
                     {
-                        await Database.InsertLog("Telegram send images to all", newItem.Name, ex.ToString());
+                        await Database.InsertLogAsync("Telegram send images to all", newItem.Name, ex.ToString());
                     }
                     catch { } //if there is any error here, we don't wanna stop the bot
                     Utils.LogInformation(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
