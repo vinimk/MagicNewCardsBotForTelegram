@@ -68,7 +68,7 @@ namespace MagicNewCardsBot
                 int replyToMessage;
                 String messageText;
                 //if the text is to big, we need to send it as a message afterwards
-                Boolean isTextToBig = card.GetTelegramText().Length > 1024;
+                Boolean isTextToBig = card.GetFullText().Length > 1024;
 
                 if (isTextToBig)
                 {
@@ -96,7 +96,7 @@ namespace MagicNewCardsBot
                 {
                     foreach (Card extraSide in card.ExtraSides)
                     {
-                        isTextToBig = extraSide.GetTelegramText().Length >= 1024;
+                        isTextToBig = extraSide.GetFullText().Length >= 1024;
 
                         if (isTextToBig)
                         {

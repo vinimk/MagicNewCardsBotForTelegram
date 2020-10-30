@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tweetinvi;
+using Tweetinvi.Logic.QueryParameters;
 using Tweetinvi.Models;
+using Tweetinvi.Parameters;
 
 namespace MagicNewCardsBot
 {
@@ -14,6 +16,7 @@ namespace MagicNewCardsBot
         private readonly string _consumerSecret;
         private readonly string _acessToken;
         private readonly string _acessTokenSecret;
+        private readonly TwitterClient _twitterClient;
         #endregion
 
         #region Constructor
@@ -23,7 +26,9 @@ namespace MagicNewCardsBot
             _consumerSecret = consumerSecret;
             _acessToken = acessToken;
             _acessTokenSecret = acessTokenSecret;
-            Auth.SetUserCredentials(_consumerKey, _consumerSecret, _acessToken, _acessTokenSecret);
+
+            _twitterClient = new TwitterClient(_consumerKey, _consumerSecret, _acessToken, _acessTokenSecret);
+
         }
         #endregion
 
@@ -36,7 +41,12 @@ namespace MagicNewCardsBot
             //loads the image and sends it
 
             byte[] byteImage = await Utils.GetByteArrayFromUrlAsync(card.ImageUrl);
-            IMedia mainImage = Upload.UploadBinary(byteImage);
+            IMedia mainImage = await _twitterClient.Upload.UploadTweetImageAsync(byteImage);
+            await _twitterClient.Upload.AddMediaMetadataAsync(new MediaMetadata(mainImage)
+            {
+                AltText = card.GetTwitterAltText()
+            });
+
             lstImages.Add(mainImage);
 
 
@@ -45,17 +55,25 @@ namespace MagicNewCardsBot
                 foreach (Card extraCard in card.ExtraSides)
                 {
                     byte[] extraByteImage = await Utils.GetByteArrayFromUrlAsync(extraCard.ImageUrl);
-                    IMedia extraImage = Upload.UploadBinary(extraByteImage);
+                    IMedia extraImage = await _twitterClient.Upload.UploadTweetImageAsync(extraByteImage);
+
+                    await _twitterClient.Upload.AddMediaMetadataAsync(new MediaMetadata(extraImage)
+                    {
+                        AltText = extraCard.GetTwitterAltText()
+                    });
+
                     lstImages.Add(extraImage);
                 }
             }
 
-            await TweetAsync.PublishTweet(card.GetTwitterText(), new Tweetinvi.Parameters.PublishTweetOptionalParameters
+            await _twitterClient.Tweets.PublishTweetAsync(new PublishTweetParameters
             {
-                Medias = lstImages
+                Medias = lstImages,
+                Text = card.GetTwitterText()
             });
         }
     }
+
     #endregion
 
 }

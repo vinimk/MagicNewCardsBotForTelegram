@@ -111,7 +111,7 @@ namespace MagicNewCardsBot
             ExtraSides = new List<Card>();
         }
 
-        public String GetTelegramText()
+        public String GetFullText()
         {
             String lineBreak = " ";
             StringBuilder sb = new StringBuilder();
@@ -153,6 +153,14 @@ namespace MagicNewCardsBot
             sb.Append(FullUrlWebSite);
 
             return sb.ToString();
+        }
+
+        public string GetTwitterAltText()
+        {
+            var text = GetFullText();
+            if (text.Length > 1000)
+                text = text.Substring(0, 999);
+            return text;
         }
 
         public String GetTelegramTextFormatted()
@@ -216,7 +224,7 @@ namespace MagicNewCardsBot
 
         public String GetTwitterText()
         {
-            string text = GetTelegramText() + " #MTG #MagicTheGathering";
+            string text = GetFullText() + " #MTG #MagicTheGathering";
             if (text.Length < 240)
             {
                 return text;
