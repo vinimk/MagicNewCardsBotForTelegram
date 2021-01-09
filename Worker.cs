@@ -111,7 +111,7 @@ namespace MagicNewCardsBot
 
                 try
                 {
-                    _ = TelegramController.SendImageToAllChatsAsync(newItem);
+                    await TelegramController.SendImageToAllChatsAsync(newItem);
                 }
                 catch (Exception ex)
                 {

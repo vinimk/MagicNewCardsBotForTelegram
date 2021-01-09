@@ -60,6 +60,67 @@ namespace MagicNewCardsBot
 
         #region Is In Methods
 
+
+        async public static Task<Boolean> IsExtraSideInDatabase(Card mainCard, Boolean isSent)
+        {
+            using MySqlConnection conn = new MySqlConnection(_connectionString);
+            Int64 count = -1;
+            if (conn.State != ConnectionState.Open)
+            {
+                await conn.OpenAsync();
+            }
+
+            foreach (Card card in mainCard.ExtraSides)
+            {
+                using MySqlCommand cmd = conn.CreateCommand();
+                cmd.CommandText = @"SELECT  count(1)
+                                            FROM ScryfallCard
+                                            WHERE
+                                            FullUrlWebSite = @FullUrlWebSite AND
+                                            IsCardSent = @IsCardSent AND
+											Date > @Date";
+
+                cmd.Parameters.Add(new MySqlParameter()
+                {
+                    ParameterName = "@FullUrlWebSite",
+                    DbType = DbType.StringFixedLength,
+                    Value = card.FullUrlWebSite,
+                });
+
+                cmd.Parameters.Add(new MySqlParameter()
+                {
+                    ParameterName = "@IsCardSent",
+                    DbType = DbType.Boolean,
+                    Value = isSent,
+                });
+
+                //dominaria workaround 
+                cmd.Parameters.Add(new MySqlParameter()
+                {
+                    ParameterName = "@Date",
+                    MySqlDbType = MySqlDbType.DateTime,
+                    Value = new DateTime(2018, 03, 11, 0, 0, 0), //the day that scryfall sent all the new card 
+                });
+
+                using (DbDataReader reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        count = await reader.GetFieldValueAsync<Int64>(0);
+                        if (count > 0)
+                            return true;
+                    }
+                }
+            }
+
+            if (conn.State == ConnectionState.Open)
+            {
+                conn.Close();
+            }
+
+            return false;
+        }
+
         async public static Task<Boolean> IsCardInDatabaseAsync(Card card, Boolean isSent)
         {
             using MySqlConnection conn = new MySqlConnection(_connectionString);
@@ -230,7 +291,7 @@ namespace MagicNewCardsBot
 
         #region Insert Methods
 
-        async public static Task InsertScryfallCardAsync(Card card)
+        async public static Task InsertScryfallCardAsync(Card card, bool isSent = false)
         {
             if (await IsCardInDatabaseAsync(card, false))
                 return;
@@ -289,7 +350,7 @@ namespace MagicNewCardsBot
                 {
                     ParameterName = "@IsCardSent",
                     DbType = DbType.Boolean,
-                    Value = false,
+                    Value = isSent,
                 });
 
                 await cmd.ExecuteNonQueryAsync();

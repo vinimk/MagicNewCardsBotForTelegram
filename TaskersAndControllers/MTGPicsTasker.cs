@@ -14,8 +14,17 @@ namespace MagicNewCardsBot
     public class MTGPicsTasker : Tasker
     {
         #region Definitions
-        private readonly string _websiteUrl = "https://www.mtgpics.com/";
+        protected new string _websiteUrl = "https://www.mtgpics.com/";
         #endregion
+
+        protected string ValidateAndFixUrl(string url)
+        {
+            if (!url.Contains(_websiteUrl))
+            {
+                url = _websiteUrl + url;
+            }
+            return url;
+        }
 
         #region Overrided Methods
 
@@ -47,16 +56,12 @@ namespace MagicNewCardsBot
                             nodeImageCard.Attributes["src"].Value.ToString().EndsWith(".jpg"))
                         {
                             string cardUrl = nodeImageCard.ParentNode.Attributes["href"].Value.ToString();
-                            if (!cardUrl.Contains(_websiteUrl))
-                            {
-                                cardUrl = _websiteUrl + cardUrl;
-                            }
+                            cardUrl = ValidateAndFixUrl(cardUrl);
+
 
                             string imageUrl = nodeImageCard.Attributes["src"].Value.ToString();
-                            if (!imageUrl.Contains(_websiteUrl))
-                            {
-                                imageUrl = _websiteUrl + imageUrl;
-                            }
+                            imageUrl = ValidateAndFixUrl(imageUrl);
+
                             var card = new Card
                             {
                                 FullUrlWebSite = cardUrl,
@@ -76,7 +81,6 @@ namespace MagicNewCardsBot
 
         private void processFieldByType(IList<HtmlNode> nodes, Card mainCard, CardFields field)
         {
-
             for (int i = 0; i < nodes.Count; i++)
             {
                 try
@@ -185,95 +189,141 @@ namespace MagicNewCardsBot
             }
         }
 
+        private string GetImageUrlFromHtmlDoc(HtmlDocument html)
+        {
+            try
+            {
+                var nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScan']");
+                var nodeImage = nodeParent.SelectSingleNode(".//img");
+                string urlNewImage = nodeImage.Attributes["src"].Value.ToString();
+                urlNewImage = ValidateAndFixUrl(urlNewImage);
+                return urlNewImage;
+            }
+            catch
+            { }
+            return null;
+        }
+
+        private void GetDetails(Card card, HtmlDocument html)
+        {
+
+            //NAME
+            var nodes = html.DocumentNode.SelectNodes(".//div[@class='Card20']");
+
+            if (nodes != null)
+                processFieldByType(nodes, card, CardFields.Name);
+
+            //MANA COST
+            nodes = html.DocumentNode.SelectNodes(".//div[@style='height:25px;float:right;']");
+
+            if (nodes != null)
+                processFieldByType(nodes, card, CardFields.ManaCost);
+
+            //TEXT
+            nodes = html.DocumentNode.SelectNodes(".//div[@id='EngShort']");
+            if (nodes != null)
+                processFieldByType(nodes, card, CardFields.Text);
+
+            var g16nodes = html.DocumentNode.SelectNodes(".//div[@class='CardG16']");
+
+            //TYPE 
+            var nodesType = g16nodes.Where(x => x.Attributes["style"] != null &&
+                                                x.Attributes["style"].Value.Trim().Equals("padding:5px 0px 5px 0px;")
+                                            ).ToList();
+
+            if (nodesType != null)
+                processFieldByType(nodesType, card, CardFields.Type);
+
+            //POWER AND TOUGHNESS AND LOYALTY
+            var nodesPT = g16nodes.Where(x => x.Attributes["align"] != null &&
+                                            !String.IsNullOrEmpty(x.InnerText.Trim()) &&
+                                            x.Attributes["align"].Value.Trim().Equals("right")).ToList();
+
+            if (nodesPT != null)
+                processFieldByType(nodesPT, card, CardFields.PT);
+
+        }
+
+        private void GetExtraSides(Card card, HtmlDocument html)
+        {
+            //SEE IF IT HAS EXTRA IMAGES
+            try
+            {
+                var nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScanBack']");
+                if (nodeParent != null)
+                {
+                    var nodeImage = nodeParent.SelectSingleNode(".//img");
+                    string urlNewImage = nodeImage?.Attributes["src"].Value.ToString();
+                    urlNewImage = ValidateAndFixUrl(urlNewImage);
+
+                    if (!string.IsNullOrEmpty(urlNewImage))
+                    {
+                        card.AddExtraSide(new Card() { ImageUrl = urlNewImage });
+                    }
+                }
+            }
+            catch
+            { }
+        }
+
         async override protected Task GetAdditionalInfoAsync(Card card)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
             {
-                HtmlDocument html = new HtmlDocument();
-                //crawl the webpage to get this information
-                using (Stream stream = await Utils.GetStreamFromUrlAsync(card.FullUrlWebSite))
-                {
-                    html.Load(stream, Encoding.GetEncoding("ISO-8859-1"));
-                }
+                HtmlDocument html = await GetHtmlDocumentFromUrlAsync(card.FullUrlWebSite);
 
                 //IMAGE
+                card.ImageUrl = GetImageUrlFromHtmlDoc(html);
+
+                GetExtraSides(card, html);
+                GetDetails(card, html);
+
+
+                //SEE IF IT HAS ALTERNATIVE ARTS/STYLE CARDS
                 try
                 {
-                    var nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScan']");
-                    var nodeImage = nodeParent.SelectSingleNode(".//img");
-                    string urlNewImage = nodeImage.Attributes["src"].Value.ToString();
-                    if (urlNewImage.Contains(_websiteUrl))
+                    for (int i = 1; i < 10; i++)
                     {
-                        card.ImageUrl = urlNewImage;
+                        var resultNodes = html.DocumentNode.SelectNodes($"//text()[. = '{i}']");
+                        if (resultNodes != null)
+                        {
+                            foreach (HtmlNode node in resultNodes)
+                            {
+                                var nodeParent = node.ParentNode;
+                                if (nodeParent != null && nodeParent.Attributes.Count > 0 && nodeParent.Attributes["href"] != null)
+                                {
+                                    var hrefAlternative = nodeParent.Attributes["href"].Value;
+                                    hrefAlternative = ValidateAndFixUrl(hrefAlternative);
+
+                                    var alternativeHtmlDoc = await GetHtmlDocumentFromUrlAsync(hrefAlternative);
+
+                                    var alernativeImage = GetImageUrlFromHtmlDoc(alternativeHtmlDoc);
+
+                                    if (!String.IsNullOrEmpty(alernativeImage))
+                                    {
+                                        Card alternativeCard = new Card() { FullUrlWebSite = hrefAlternative, ImageUrl = alernativeImage };
+                                        GetExtraSides(alternativeCard, alternativeHtmlDoc);
+                                        GetDetails(alternativeCard, alternativeHtmlDoc);
+
+                                        //small workarround to not cascade extra sides
+                                        card.AddExtraSide(alternativeCard);
+
+                                        for (int j = 0; j < alternativeCard.ExtraSides.Count; j++)
+                                        {
+                                            Card extraSideAlternative = alternativeCard.ExtraSides[j];
+                                            card.AddExtraSide(extraSideAlternative);
+                                            alternativeCard.ExtraSides.RemoveAt(j);
+                                        }
+                                        
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 catch
                 { }
-
-
-                //SEE IF IT HAS EXTRA IMAGES
-                try
-                {
-                    var nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScanBack']");
-                    if (nodeParent != null)
-                    {
-
-                        var nodeImage = nodeParent.SelectSingleNode(".//img");
-                        string urlNewImage = nodeImage?.Attributes["src"].Value.ToString();
-                        if (!urlNewImage.Contains(_websiteUrl))
-                        {
-                            urlNewImage = _websiteUrl + urlNewImage;
-                        }
-
-                        if (!string.IsNullOrEmpty(urlNewImage))
-                        {
-                            if (card.ExtraSides == null)
-                                card.ExtraSides = new List<Card>();
-
-                            card.ExtraSides.Add(new Card() { ImageUrl = urlNewImage });
-
-                        }
-                    }
-                }
-                catch
-                { }
-
-
-                //NAME
-                var nodes = html.DocumentNode.SelectNodes(".//div[@class='Card20']");
-
-                if (nodes != null)
-                    processFieldByType(nodes, card, CardFields.Name);
-
-                //MANA COST
-                nodes = html.DocumentNode.SelectNodes(".//div[@style='height:25px;float:right;']");
-
-                if (nodes != null)
-                    processFieldByType(nodes, card, CardFields.ManaCost);
-
-                //TEXT
-                nodes = html.DocumentNode.SelectNodes(".//div[@id='EngShort']");
-                if (nodes != null)
-                    processFieldByType(nodes, card, CardFields.Text);
-
-                var g16nodes = html.DocumentNode.SelectNodes(".//div[@class='CardG16']");
-
-                //TYPE 
-                var nodesType = g16nodes.Where(x => x.Attributes["style"] != null  &&
-                                                    x.Attributes["style"].Value.Trim().Equals("padding:5px 0px 5px 0px;") 
-                                                ).ToList();
-
-                if (nodesType != null)
-                    processFieldByType(nodesType, card, CardFields.Type);
-
-                //POWER AND TOUGHNESS AND LOYALTY
-                var nodesPT = g16nodes.Where(x => x.Attributes["align"] != null &&
-                                                !String.IsNullOrEmpty(x.InnerText.Trim()) &&
-                                                x.Attributes["align"].Value.Trim().Equals("right")).ToList();
-
-                if (nodesPT != null)
-                    processFieldByType(nodesPT, card, CardFields.PT);
 
             }
             catch

@@ -1,11 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using HtmlAgilityPack;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace MagicNewCardsBot
 {
     public abstract class Tasker
     {
-
+        protected readonly string _websiteUrl;
         #region Public Methods
 
         async public IAsyncEnumerable<Card> GetNewCardsAsync()
@@ -17,12 +20,35 @@ namespace MagicNewCardsBot
                 if (cardInDb == false)
                 {
                     await GetAdditionalInfoAsync(card);
+                    if (card.ExtraSides != null && card.ExtraSides.Count > 0)
+                    {
+                        if (await Database.IsExtraSideInDatabase(card, true) == true)
+                            continue;
+
+                        foreach (Card extraSide in card.ExtraSides)
+                        {
+                            if (!string.IsNullOrEmpty(extraSide.FullUrlWebSite))
+                                await Database.InsertScryfallCardAsync(card, true);
+                        }
+                    }
+
                     //adds in the database
                     await Database.InsertScryfallCardAsync(card);
 
                     yield return card;
                 }
             }
+        }
+
+
+
+        async protected Task<HtmlDocument> GetHtmlDocumentFromUrlAsync(string url)
+        {
+            HtmlDocument html = new HtmlDocument();
+            //crawl the webpage to get this information
+            using Stream stream = await Utils.GetStreamFromUrlAsync(url);
+            html.Load(stream, Encoding.GetEncoding("ISO-8859-1"));
+            return html;
         }
         #endregion
 
