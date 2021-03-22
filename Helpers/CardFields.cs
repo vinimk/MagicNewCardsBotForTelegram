@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MagicNewCardsBot.Helpers
+﻿namespace MagicNewCardsBot.Helpers
 {
     public enum CardFields
     {

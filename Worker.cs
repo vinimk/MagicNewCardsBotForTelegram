@@ -22,7 +22,7 @@ namespace MagicNewCardsBot
             Utils.LogInformation($"DebugMode: {options.IsDebugMode}");
 
             _isDebugMode = options.IsDebugMode;
-            _tasker = new MTGPicsTasker();
+            _tasker = new MythicApiTask();
 
             TimeInternalMS = options.TimeExecuteIntervalInMs;
 
@@ -66,7 +66,7 @@ namespace MagicNewCardsBot
 
                     //we wait for a while before executing again, this interval be changed in the appsettings.json file
                     Utils.LogInformation(String.Format("Going to sleep for {0} ms.", TimeInternalMS));
-                    await Task.Delay(TimeInternalMS);
+                    await Task.Delay(TimeInternalMS, stoppingToken);
                 }
                 catch (Exception ex)
                 {
@@ -80,7 +80,7 @@ namespace MagicNewCardsBot
                         Console.WriteLine("Exception in catch, sad");
                         Console.WriteLine(ex2.ToString());
                     }
-                    await Task.Delay(TimeInternalMS);
+                    await Task.Delay(TimeInternalMS, stoppingToken);
                 }
             }
         }

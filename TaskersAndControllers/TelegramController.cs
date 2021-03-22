@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
@@ -62,11 +61,11 @@ namespace MagicNewCardsBot
 
         #region Private Methods
 
-        private InputMediaPhoto CreateInputMedia(Card card)
+        private static InputMediaPhoto CreateInputMedia(Card card)
         {
 
 
-            InputMediaPhoto photo = new InputMediaPhoto(new InputMedia(card.ImageUrl))
+            InputMediaPhoto photo = new(new InputMedia(card.ImageUrl))
             {
                 Caption = GetMessageText(card),
                 ParseMode = Telegram.Bot.Types.Enums.ParseMode.Html
@@ -75,7 +74,7 @@ namespace MagicNewCardsBot
             return photo;
         }
 
-        private string GetMessageText(Card card)
+        private static string GetMessageText(Card card)
         {
             String messageText;
             //if the text is to big, we need to send it as a message afterwards
@@ -100,7 +99,7 @@ namespace MagicNewCardsBot
                 //if there is a additional image, we must send a album
                 if (card.ExtraSides != null && card.ExtraSides.Count > 0)
                 {
-                    List<InputMediaPhoto> lstPhotos = new List<InputMediaPhoto>();
+                    List<InputMediaPhoto> lstPhotos = new();
 
                     InputMediaPhoto cardPhoto = CreateInputMedia(card);
                     lstPhotos.Add(cardPhoto);
@@ -184,7 +183,7 @@ namespace MagicNewCardsBot
                 //get all updates
                 Update[] updates = await _botClient.GetUpdatesAsync(_offset);
 
-                if (updates.Count() > 0)
+                if (updates.Length > 0)
                 {
                     //check if the chatID is in the list, if it isn't, adds it
                     foreach (Update update in updates)
@@ -195,7 +194,7 @@ namespace MagicNewCardsBot
                             //and there is only one message in the return
                             //it means that there are no new messages after the offset
                             //so we can stop this and add the hook for the on update event
-                            if (updates.Count() == 1 &&
+                            if (updates.Length == 1 &&
                                 _offset == update.Id)
                             {
                                 HookUpdateEvent();

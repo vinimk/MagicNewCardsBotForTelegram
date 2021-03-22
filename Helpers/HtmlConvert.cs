@@ -9,10 +9,10 @@ namespace MagicNewCardsBot
 
         public static string Convert(string path)
         {
-            HtmlDocument doc = new HtmlDocument();
+            HtmlDocument doc = new();
             doc.Load(path);
 
-            StringWriter sw = new StringWriter();
+            StringWriter sw = new();
             ConvertTo(doc.DocumentNode, sw);
             sw.Flush();
             return sw.ToString();
@@ -20,10 +20,10 @@ namespace MagicNewCardsBot
 
         public static string ConvertHtml(string html)
         {
-            HtmlDocument doc = new HtmlDocument();
+            HtmlDocument doc = new();
             doc.LoadHtml(html);
 
-            StringWriter sw = new StringWriter();
+            StringWriter sw = new();
             ConvertTo(doc.DocumentNode, sw);
             sw.Flush();
             return sw.ToString();

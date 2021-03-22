@@ -23,7 +23,7 @@ namespace MagicNewCardsBot
         #region Update Methods
         async public static Task UpdateIsSentAsync(Card card, Boolean isSent)
         {
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
+            using MySqlConnection conn = new(_connectionString);
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
@@ -63,7 +63,7 @@ namespace MagicNewCardsBot
 
         async public static Task<Boolean> IsExtraSideInDatabase(Card mainCard, Boolean isSent)
         {
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
+            using MySqlConnection conn = new(_connectionString);
             Int64 count = -1;
             if (conn.State != ConnectionState.Open)
             {
@@ -102,14 +102,12 @@ namespace MagicNewCardsBot
                     Value = new DateTime(2018, 03, 11, 0, 0, 0), //the day that scryfall sent all the new card 
                 });
 
-                using (DbDataReader reader = await cmd.ExecuteReaderAsync())
+                using DbDataReader reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    while (await reader.ReadAsync())
-                    {
-                        count = await reader.GetFieldValueAsync<Int64>(0);
-                        if (count > 0)
-                            return true;
-                    }
+                    count = await reader.GetFieldValueAsync<Int64>(0);
+                    if (count > 0)
+                        return true;
                 }
             }
 
@@ -123,7 +121,7 @@ namespace MagicNewCardsBot
 
         async public static Task<Boolean> IsCardInDatabaseAsync(Card card, Boolean isSent)
         {
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
+            using MySqlConnection conn = new(_connectionString);
             Int64 count = -1;
             if (conn.State != ConnectionState.Open)
             {
@@ -178,7 +176,7 @@ namespace MagicNewCardsBot
 
         async public static Task<Boolean> ChatExistsAsync(Chat chat)
         {
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
+            using MySqlConnection conn = new(_connectionString);
             Int64 count = -1;
             if (conn.State != ConnectionState.Open)
             {
@@ -218,8 +216,8 @@ namespace MagicNewCardsBot
 
         async public static Task<List<Set>> GetAllCrawlableSetsAsync()
         {
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
-            List<Set> retList = new List<Set>();
+            using MySqlConnection conn = new(_connectionString);
+            List<Set> retList = new();
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
@@ -235,7 +233,7 @@ namespace MagicNewCardsBot
                 using DbDataReader reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    Set set = new Set
+                    Set set = new()
                     {
                         ID = await reader.GetFieldValueAsync<Int64>(0),
                         URL = await reader.GetFieldValueAsync<String>(1),
@@ -253,8 +251,8 @@ namespace MagicNewCardsBot
 
         async public static IAsyncEnumerable<Chat> GetAllChatsAsync()
         {
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
-            List<Chat> retList = new List<Chat>();
+            using MySqlConnection conn = new(_connectionString);
+            List<Chat> retList = new();
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
@@ -271,7 +269,7 @@ namespace MagicNewCardsBot
                 while (await reader.ReadAsync())
                 {
                     ChatType type = (ChatType)Enum.Parse(typeof(ChatType), await reader.GetFieldValueAsync<String>(3));
-                    Chat chat = new Chat
+                    Chat chat = new()
                     {
                         Id = await reader.GetFieldValueAsync<Int64>(0),
                         Title = await reader.GetFieldValueAsync<String>(1),
@@ -296,7 +294,7 @@ namespace MagicNewCardsBot
             if (await IsCardInDatabaseAsync(card, false))
                 return;
 
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
+            using MySqlConnection conn = new(_connectionString);
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
@@ -374,7 +372,7 @@ namespace MagicNewCardsBot
             try
             {
                 Int32 result = -1;
-                using MySqlConnection conn = new MySqlConnection(_connectionString);
+                using MySqlConnection conn = new(_connectionString);
                 if (conn.State != ConnectionState.Open)
                 {
                     await conn.OpenAsync();
@@ -431,7 +429,7 @@ namespace MagicNewCardsBot
         async public static Task<Int64> InsertChatAsync(Chat chat)
         {
             Int64 ret = -1;
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
+            using MySqlConnection conn = new(_connectionString);
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
@@ -497,7 +495,7 @@ namespace MagicNewCardsBot
         async public static Task<int> DeleteFromChatAsync(long chatId)
         {
             int result;
-            using MySqlConnection conn = new MySqlConnection(_connectionString);
+            using MySqlConnection conn = new(_connectionString);
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();

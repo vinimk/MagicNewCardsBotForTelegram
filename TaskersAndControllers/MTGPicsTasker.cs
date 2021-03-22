@@ -35,7 +35,7 @@ namespace MagicNewCardsBot
             {
                 //loads the website
 
-                HtmlDocument doc = new HtmlDocument();
+                HtmlDocument doc = new();
                 //crawl the webpage to get this information
                 using (Stream stream = await Utils.GetStreamFromUrlAsync(set.URL))
                 {
@@ -79,7 +79,7 @@ namespace MagicNewCardsBot
             }
         }
 
-        private void processFieldByType(IList<HtmlNode> nodes, Card mainCard, CardFields field)
+        private static void ProcessFieldByType(IList<HtmlNode> nodes, Card mainCard, CardFields field)
         {
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -106,7 +106,7 @@ namespace MagicNewCardsBot
                                 if (imgUrl.EndsWith(".png"))
                                 {
                                     int lastIndex = imgUrl.LastIndexOf('/');
-                                    string cost = imgUrl.Substring(lastIndex + 1);
+                                    string cost = imgUrl[(lastIndex + 1)..];
                                     cost = cost.Replace(".png", String.Empty);
                                     totalCost += cost.Trim().ToUpper();
                                 }
@@ -127,7 +127,7 @@ namespace MagicNewCardsBot
 
                             break;
                         case CardFields.Text:
-                            StringBuilder sb = new StringBuilder();
+                            StringBuilder sb = new();
                             foreach (var childNode in node.ChildNodes)
                             {
                                 if (childNode.Attributes != null)
@@ -204,25 +204,25 @@ namespace MagicNewCardsBot
             return null;
         }
 
-        private void GetDetails(Card card, HtmlDocument html)
+        private static void GetDetails(Card card, HtmlDocument html)
         {
 
             //NAME
             var nodes = html.DocumentNode.SelectNodes(".//div[@class='Card20']");
 
             if (nodes != null)
-                processFieldByType(nodes, card, CardFields.Name);
+                ProcessFieldByType(nodes, card, CardFields.Name);
 
             //MANA COST
             nodes = html.DocumentNode.SelectNodes(".//div[@style='height:25px;float:right;']");
 
             if (nodes != null)
-                processFieldByType(nodes, card, CardFields.ManaCost);
+                ProcessFieldByType(nodes, card, CardFields.ManaCost);
 
             //TEXT
             nodes = html.DocumentNode.SelectNodes(".//div[@id='EngShort']");
             if (nodes != null)
-                processFieldByType(nodes, card, CardFields.Text);
+                ProcessFieldByType(nodes, card, CardFields.Text);
 
             var g16nodes = html.DocumentNode.SelectNodes(".//div[@class='CardG16']");
 
@@ -232,7 +232,7 @@ namespace MagicNewCardsBot
                                             ).ToList();
 
             if (nodesType != null)
-                processFieldByType(nodesType, card, CardFields.Type);
+                ProcessFieldByType(nodesType, card, CardFields.Type);
 
             //POWER AND TOUGHNESS AND LOYALTY
             var nodesPT = g16nodes.Where(x => x.Attributes["align"] != null &&
@@ -240,7 +240,7 @@ namespace MagicNewCardsBot
                                             x.Attributes["align"].Value.Trim().Equals("right")).ToList();
 
             if (nodesPT != null)
-                processFieldByType(nodesPT, card, CardFields.PT);
+                ProcessFieldByType(nodesPT, card, CardFields.PT);
 
         }
 
@@ -302,7 +302,7 @@ namespace MagicNewCardsBot
 
                                     if (!String.IsNullOrEmpty(alernativeImage))
                                     {
-                                        Card alternativeCard = new Card() { FullUrlWebSite = hrefAlternative, ImageUrl = alernativeImage };
+                                        Card alternativeCard = new() { FullUrlWebSite = hrefAlternative, ImageUrl = alernativeImage };
                                         GetExtraSides(alternativeCard, alternativeHtmlDoc);
                                         GetDetails(alternativeCard, alternativeHtmlDoc);
 
@@ -315,7 +315,7 @@ namespace MagicNewCardsBot
                                             card.AddExtraSide(extraSideAlternative);
                                             alternativeCard.ExtraSides.RemoveAt(j);
                                         }
-                                        
+
                                     }
                                 }
                             }

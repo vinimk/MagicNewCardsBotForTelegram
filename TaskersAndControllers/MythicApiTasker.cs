@@ -1,174 +1,240 @@
+using HtmlAgilityPack;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
 namespace MagicNewCardsBot
 {
-    //public class MythicApiTasker : Tasker
-    //{
-    //    #region Definitions
-    //    private readonly string _websiteUrl = "https://mythicspoiler.com/";
-    //    private readonly string _pathNewCards = "newspoilers.html";
-    //    #endregion
+    public class MythicApiTask : Tasker
+    {
+        #region Definitions
+        protected new string _websiteUrl = "https://mythicspoiler.com/";
+        protected string _page = "newspoilers.html";
+        #endregion
 
-    //    #region Overrided Methods
+        protected string ValidateAndFixUrl(string url)
+        {
+            if (!url.Contains(_websiteUrl))
+            {
+                url = _websiteUrl + url;
+            }
+            return url;
+        }
 
-    //    async override protected Task<List<Card>> GetAvaliableCardsInWebSite()
-    //    {
-    //        List<Card> lstCards = new List<Card>();
-    //        try
-    //        {
-    //            //loads the website
+        #region Overrided Methods
 
-    //            HtmlDocument doc = new HtmlDocument();
-    //            //crawl the webpage to get this information
-    //            using (Stream stream = await Program.GetStreamFromUrlAsync(String.Format("{0}{1}", _websiteUrl, _pathNewCards)))
-    //            {
-    //                doc.Load(stream);
-    //            }
+        async override protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
+        {
+            //loads the website
 
-    //            //all the cards are a a href so we get all of that
-    //            HtmlNodeCollection nodesCards = doc.DocumentNode.SelectNodes("//img");
-    //            foreach (HtmlNode node in nodesCards)
-    //            {
-    //                //also the cards have a special class called 'card', so we use it to get the right ones
-    //                if (node.Attributes.Contains("src") &&
-    //                    node.Attributes["src"].Value.ToString().Contains("cards") &&
-    //                    node.Attributes["src"].Value.ToString().EndsWith(".jpg"))
-    //                {
-    //                    Card card = new Card
-    //                    {
-    //                        FullUrlWebSite = _websiteUrl + node.ParentNode.Attributes["href"].Value.ToString(),
-    //                        ImageUrl = _websiteUrl + node.Attributes["src"].Value.ToString()
-    //                    };
-    //                    lstCards.Add(card);
-    //                }
+            HtmlDocument doc = await GetHtmlDocumentFromUrlAsync(_websiteUrl + _page);
 
-    //                //only get the lastest 50
-    //                if (lstCards.Count == Database.MAX_CARDS)
-    //                    break;
-    //            }
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            Database.InsertLog("Error crawling the main page", String.Empty, ex.ToString()).Wait();
-    //            Program.WriteLine("Error crawling the main page");
-    //            Program.WriteLine(ex.Message);
-    //            Program.WriteLine(ex.StackTrace);
-    //        }
-
-    //        return lstCards;
-    //    }
+            //all the cards are a a href so we get all of that
+            HtmlNodeCollection nodesGridCards = doc.DocumentNode.SelectNodes("//div[contains(@class, 'grid-card')]");
+            if (nodesGridCards != null)
+            {
+                int crawlsFromThisSite = 0;
+                foreach (HtmlNode nodeGrid in nodesGridCards)
+                {
+                    var nodeImg = nodeGrid.SelectSingleNode(".//img");
+                    if (nodeImg.Attributes.Contains("src") &&
+                        nodeImg.Attributes["src"].Value.ToString().Contains("cards") &&
+                        nodeImg.Attributes["src"].Value.ToString().Trim().EndsWith(".jpg"))
+                    {
+                        string cardUrl = nodeImg.ParentNode.Attributes["href"].Value.Trim().ToString();
+                        cardUrl = ValidateAndFixUrl(cardUrl);
 
 
-    //    async override protected Task<Card> GetAdditionalInfo(Card spoil)
-    //    {
-    //        //we do all of this in empty try catches because it is not mandatory information
-    //        try
-    //        {
-    //            HtmlDocument html = new HtmlDocument();
-    //            //crawl the webpage to get this information
-    //            using (Stream stream = await Program.GetStreamFromUrlAsync(spoil.FullUrlWebSite))
-    //            {
-    //                html.Load(stream);
-    //            }
+                        string imageUrl = nodeImg.Attributes["src"].Value.Trim().ToString();
+                        imageUrl = ValidateAndFixUrl(imageUrl);
 
-    //            try
-    //            {
-    //                var node2 = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'THE individual card')]");
-    //                foreach (HtmlNode possibleImage in node2.ParentNode.ChildNodes)
-    //                {
-    //                    if (possibleImage.Attributes["src"] != null)
-    //                    {
-    //                        Uri url = new Uri(spoil.FullUrlWebSite);
-    //                        string possible = url.AbsoluteUri.Remove(url.AbsoluteUri.Length - url.Segments.Last().Length) + possibleImage.Attributes["src"].Value.ToString();
-    //                        if (possible != spoil.ImageUrl)
-    //                        {
-    //                            Card extraSide = new Card
-    //                            {
-    //                                ImageUrl = possible
-    //                            };
-    //                            spoil.ExtraSides.Add(extraSide);
-    //                        }
-    //                    }
-    //                }
-    //            }
-    //            catch
-    //            { }
+                        Card card = new()
+                        {
+                            FullUrlWebSite = cardUrl,
+                            ImageUrl = imageUrl
+                        };
 
-    //            try
-    //            {
-    //                string name = html.DocumentNode.SelectSingleNode(".//title").InnerText.Trim();
-    //                int indexSeparator = name.IndexOf('|');
-    //                if (name.Length >= indexSeparator)
-    //                    name = name.Substring(0, name.IndexOf('|')).Trim();
+                        try
+                        {
+                            var nodeCenterCredits = nodeGrid?.SelectSingleNode(".//center");
+                            var nodeAHrefCredits = nodeCenterCredits?.ParentNode;
+                            card.CreditsUrl = nodeAHrefCredits?.Attributes["href"].Value.Trim();
+                            var nodeTextCredits = nodeCenterCredits?.SelectSingleNode(".//font");
+                            card.Credits = nodeTextCredits.InnerText.ToString().Trim();
+                        }
+                        catch { }
 
-    //                if (name != "MythicSpoiler")
-    //                {
-    //                    spoil.Name = name;
-    //                }
-    //            }
-    //            catch
-    //            { }
-    //            try
-    //            {
-    //                spoil.ManaCost = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[2]/td[1]").LastChild.InnerText.Trim();
-    //            }
-    //            catch
-    //            { }
-    //            try
-    //            {
-    //                spoil.Type = html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[3]/td[1]").LastChild.InnerText.Trim();
-    //            }
-    //            catch
-    //            { }
-    //            try
-    //            {
-    //                StringBuilder sb = new StringBuilder();
-    //                var nodes = html.DocumentNode.SelectNodes("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[4]/td[1]");
-    //                foreach (var node in nodes)
-    //                {
-    //                    String txt = node.InnerText;
-    //                    txt = txt.Replace("\n\n", "\n");
-    //                    txt = txt.Replace(@"<!--CARD TEXT-->", String.Empty);
-    //                    sb.Append(txt.Trim());
-    //                }
-    //                spoil.Text = System.Net.WebUtility.HtmlDecode(sb.ToString());
-    //            }
-    //            catch
-    //            { }
-    //            try
-    //            {
-    //                spoil.Flavor = System.Net.WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[5]/td[1]/i[1]").LastChild.InnerText.Trim());
-    //            }
-    //            catch
-    //            { }
 
-    //            try
-    //            {
-    //                var nodes = html.DocumentNode.SelectNodes("/html[1]/body[1]/center[1]/table[5]/tr[1]/td[2]/font[1]/center[1]/table[1]/tr[7]/td[2]/font[1]");
+                        yield return card;
+                        crawlsFromThisSite++;
+                    }
 
-    //                foreach (var node in nodes)
-    //                {
-    //                    var powerToughness = node.ChildNodes[2].InnerText.Trim();
-    //                    powerToughness = powerToughness.Replace("\n", String.Empty);
-    //                    if (powerToughness.Contains("/"))
-    //                    {
-    //                        String[] arrPt = powerToughness.Split('/');
-    //                        if (arrPt.Length == 2)
-    //                        {
-    //                            spoil.Power = arrPt[0];
-    //                            spoil.Toughness = arrPt[1];
-    //                            break;
-    //                        }
-    //                    }
-    //                }
+                    //only get the lastest 50
+                    if (crawlsFromThisSite == Database.MAX_CARDS)
+                        break;
+                }
+            }
 
-    //            }
-    //            catch
-    //            { }
-    //        }
-    //        catch
-    //        { }
-    //        return spoil;
-    //    }
+        }
 
-    //    #endregion
-    //}
+        async override protected Task GetAdditionalInfoAsync(Card card)
+        {
+            //we do all of this in empty try catches because it is not mandatory information
+            try
+            {
+                //we do all of this in empty try catches because it is not mandatory information
+                try
+                {
+                    HtmlDocument html = await GetHtmlDocumentFromUrlAsync(card.FullUrlWebSite);
+
+                    try
+                    {
+                        var nodeScript = html.DocumentNode.SelectSingleNode("//script[contains(text(),'/cards/')]");
+                        if (nodeScript != null)
+                        {
+                            foreach (string line in nodeScript.InnerHtml.Split("\n"))
+                            {
+                                if (line.Contains("/cards/"))
+                                {
+                                    foreach (string part in line.Split("\""))
+                                    {
+                                        if (part.Contains("https") || part.Contains("http"))
+                                        {
+                                            string alterImageUrl = part.Trim();
+                                            var alterName = alterImageUrl[(alterImageUrl.LastIndexOf('/') + 1)..];
+                                            string originalName = card.ImageUrl[(card.ImageUrl.LastIndexOf('/') + 1)..];
+                                            if (alterName != originalName)
+                                            {
+                                                if (await Utils.IsValidUrl(alterImageUrl))
+                                                {
+                                                    card.AddExtraSide(new Card() { ImageUrl = alterImageUrl });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            //foreach (HtmlNode possibleImage in node2.ParentNode.ChildNodes)
+                            //{
+                            //    if (possibleImage.Attributes["src"] != null)
+                            //    {
+                            //        Uri url = new Uri(card.FullUrlWebSite);
+                            //        string possible = url.AbsoluteUri.Remove(url.AbsoluteUri.Length - url.Segments.Last().Length) + possibleImage.Attributes["src"].Value.ToString();
+                            //        if (possible != card.ImageUrl)
+                            //        {
+                            //            Card extraSide = new Card
+                            //            {
+                            //                ImageUrl = possible
+                            //            };
+                            //            card.ExtraSides.Add(extraSide);
+                            //        }
+                            //    }
+                            //}
+                        }
+                    }
+                    catch
+                    { }
+
+                    try
+                    {
+                        string name = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'CARD NAME')]").ParentNode.InnerText.Trim();
+
+
+                        if (name != "MythicSpoiler")
+                        {
+                            card.Name = name;
+                        }
+                    }
+                    catch
+                    { }
+                    try
+                    {
+                        card.ManaCost = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'MANA COST')]").ParentNode.InnerText.Trim();
+                    }
+                    catch
+                    { }
+                    try
+                    {
+                        var nodesType = html.DocumentNode.SelectNodes("//comment()[contains(., 'TYPE')]");
+                        if (nodesType.Count > 7)
+                            card.Type = html.DocumentNode.SelectNodes("//comment()[contains(., 'TYPE')]")[1].ParentNode.InnerText.Trim();
+                        if (card.Type.Length > 100)
+                            card.Type = null;
+                    }
+                    catch
+                    { }
+                    try
+                    {
+                        StringBuilder sb = new();
+                        var nodes = html.DocumentNode.SelectNodes("//comment()[contains(., 'CARD TEXT')]")[16].ParentNode.ChildNodes;
+                        foreach (var node in nodes)
+                        {
+                            String txt = node.InnerText;
+                            txt = txt.Replace("\n\n", "\n");
+                            txt = txt.Replace(@"<!--CARD TEXT-->", String.Empty);
+                            sb.Append(txt);
+                        }
+                        //this code is a mess, but it works
+                        var txt2 = sb.ToString();
+                        txt2 = txt2.Replace("\n\n", "\n");
+                        txt2 = txt2.Replace("\n\n", "\n");
+                        txt2 = txt2.Replace("\n\n", "\n");
+                        txt2 = txt2.Replace("\n\n", "\n");
+                        txt2 = txt2.Trim();
+                        card.Text = System.Net.WebUtility.HtmlDecode(txt2);
+                    }
+                    catch
+                    { }
+                    try
+                    {
+                        card.Flavor = System.Net.WebUtility.HtmlDecode(html.DocumentNode.SelectSingleNode("//comment()[contains(., 'FLAVOR TEXT')]").ParentNode.InnerText.Trim());
+                    }
+                    catch
+                    { }
+
+                    try
+                    {
+                        var nodes = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'P/T')]").ParentNode.ChildNodes;
+
+                        foreach (var node in nodes)
+                        {
+                            var powerToughness = node.InnerText.Trim();
+                            powerToughness = powerToughness.Replace("\n", String.Empty);
+                            if (powerToughness.Contains("/"))
+                            {
+                                String[] arrPt = powerToughness.Split('/');
+                                if (arrPt.Length == 2)
+                                {
+                                    card.Power = arrPt[0];
+                                    card.Toughness = arrPt[1];
+                                    break;
+                                }
+                            }
+                            if (powerToughness.Contains("[") &&
+                                powerToughness.Contains("]")) //it is a Planeswalker and it is loyalty
+                            {
+                                powerToughness = powerToughness.Replace("[", string.Empty).Replace("]", string.Empty);
+                                if (int.TryParse(powerToughness, out int loyalty))
+                                {
+                                    card.Loyalty = loyalty;
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+                    catch
+                    { }
+                }
+                catch
+                { }
+            }
+            catch
+            { }
+        }
+
+
+        #endregion
+    }
 }

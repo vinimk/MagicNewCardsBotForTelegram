@@ -36,7 +36,7 @@ namespace MagicNewCardsBot
         async public Task TweetCardAsync(Card card)
         {
 
-            List<IMedia> lstImages = new List<IMedia>();
+            List<IMedia> lstImages = new();
 
             //loads the image and sends it
 

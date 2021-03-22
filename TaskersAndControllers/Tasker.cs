@@ -29,6 +29,8 @@ namespace MagicNewCardsBot
                         {
                             if (!string.IsNullOrEmpty(extraSide.FullUrlWebSite))
                                 await Database.InsertScryfallCardAsync(card, true);
+                            else
+                                extraSide.FullUrlWebSite = card.FullUrlWebSite;
                         }
                     }
 
@@ -40,11 +42,9 @@ namespace MagicNewCardsBot
             }
         }
 
-
-
-        async protected Task<HtmlDocument> GetHtmlDocumentFromUrlAsync(string url)
+        protected static async Task<HtmlDocument> GetHtmlDocumentFromUrlAsync(string url)
         {
-            HtmlDocument html = new HtmlDocument();
+            HtmlDocument html = new();
             //crawl the webpage to get this information
             using Stream stream = await Utils.GetStreamFromUrlAsync(url);
             html.Load(stream, Encoding.GetEncoding("ISO-8859-1"));

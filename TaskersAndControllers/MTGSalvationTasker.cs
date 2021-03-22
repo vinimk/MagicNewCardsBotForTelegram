@@ -95,7 +95,7 @@ namespace MagicNewCardsBot
             }
         }
 
-        async private Task<bool> CheckImage(Card card)
+        private static async Task<bool> CheckImage(Card card)
         {
             try
             {
@@ -114,13 +114,13 @@ namespace MagicNewCardsBot
         }
 
 
-        async private Task<Card> GetAdditionalInfo(Card card)
+        private static async Task<Card> GetAdditionalInfo(Card card)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
             {
                 //crawl the webpage to get this information
-                HtmlWeb htmlWeb = new HtmlWeb();
+                HtmlWeb htmlWeb = new();
                 HtmlDocument html = await htmlWeb.LoadFromWebAsync(card.FullUrlWebSite);
 
                 try
@@ -164,9 +164,9 @@ namespace MagicNewCardsBot
         }
 
 
-        private List<KeyValuePair<string, string>> ParsePrinterResponse(string rawResponse)
+        private static List<KeyValuePair<string, string>> ParsePrinterResponse(string rawResponse)
         {
-            List<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>();
+            List<KeyValuePair<string, string>> pairs = new();
             string[] colonItems = rawResponse.Trim().Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
             if (colonItems.Length > 1)
             {
@@ -187,7 +187,7 @@ namespace MagicNewCardsBot
                         currentValue = currentItem.Substring(0, spaceIndex);
                     }
                     pairs.Add(new KeyValuePair<string, string>(currentKey, currentValue));
-                    currentKey = currentItem.Substring(spaceIndex + 1);
+                    currentKey = currentItem[(spaceIndex + 1)..];
                 }
             }
             return pairs;

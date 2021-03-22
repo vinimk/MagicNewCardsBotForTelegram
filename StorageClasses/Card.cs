@@ -8,6 +8,7 @@ namespace MagicNewCardsBot
 {
     public class Card
     {
+        private static readonly string URL_REPLACE_TEXT = "twitterUrl23Characters";
         private string name;
         [JsonProperty("name")]
         public string Name
@@ -103,6 +104,28 @@ namespace MagicNewCardsBot
             get;
             set;
         }
+        public string CreditsUrl
+        {
+            get;
+            set;
+        }
+        public string Credits
+        {
+            get;
+            set;
+        }
+
+        //we blacklist some URLs for credits that are from wizards or something like that
+        public bool UseCredits()
+        {
+            if (String.IsNullOrWhiteSpace(Credits) && String.IsNullOrWhiteSpace(CreditsUrl))
+                return false;
+            if (CreditsUrl.Contains("card-image-gallery"))
+                return false;
+            if (CreditsUrl.Contains("www.twitch.tv/magic"))
+                return false;
+            return true;
+        }
 
         #region Methods
 
@@ -114,7 +137,7 @@ namespace MagicNewCardsBot
         public String GetFullText()
         {
             String lineBreak = " ";
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             if (!String.IsNullOrEmpty(Name))
             {
@@ -139,7 +162,7 @@ namespace MagicNewCardsBot
                 sb.Append(Text);
                 if (!sb.ToString().EndsWith("."))
                 {
-                    sb.Append(".");
+                    sb.Append('.');
                 }
                 sb.Append(lineBreak);
             }
@@ -147,6 +170,12 @@ namespace MagicNewCardsBot
             if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
             {
                 sb.AppendFormat(" ({0}/{1})", Power, Toughness);
+                sb.Append(lineBreak);
+            }
+
+            if (UseCredits())
+            {
+                sb.Append(URL_REPLACE_TEXT);
                 sb.Append(lineBreak);
             }
 
@@ -160,13 +189,13 @@ namespace MagicNewCardsBot
             var text = GetFullText();
             if (text.Length > 1000)
                 text = text.Substring(0, 999);
-            return text;
+            return text.Replace(URL_REPLACE_TEXT, CreditsUrl);
         }
 
         public String GetTelegramTextFormatted()
         {
             String lineBreak = Environment.NewLine;
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             if (!String.IsNullOrEmpty(Name))
             {
@@ -194,16 +223,12 @@ namespace MagicNewCardsBot
                 sb.Append(WebUtility.HtmlEncode(Text));
                 if (!sb.ToString().EndsWith("."))
                 {
-                    sb.Append(".");
+                    sb.Append('.');
                 }
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Flavor))
-            {
-                sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Flavor));
-                sb.Append(lineBreak);
-            }
+
 
             if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
             {
@@ -217,7 +242,19 @@ namespace MagicNewCardsBot
                 sb.Append(lineBreak);
             }
 
-            sb.Append(FullUrlWebSite);
+            if (!String.IsNullOrEmpty(Flavor))
+            {
+                sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Flavor));
+                sb.Append(lineBreak);
+            }
+
+            if (UseCredits())
+            {
+                sb.Append($"Revealed by: <a href='{CreditsUrl}'>{Credits}</a>");
+                sb.Append(lineBreak);
+            }
+
+            sb.Append($"<a href='{FullUrlWebSite}'><i>Link</i></a>");
 
             return sb.ToString();
         }
@@ -227,29 +264,34 @@ namespace MagicNewCardsBot
             string text = GetFullText() + " #MTG #MagicTheGathering";
             if (text.Length < 240)
             {
-                return text;
+                return text.Replace(URL_REPLACE_TEXT, CreditsUrl);
             }
             else
             {
                 String lineBreak = Environment.NewLine;
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 if (!String.IsNullOrEmpty(Name))
                 {
                     sb.Append(Name);
                 }
 
-                if (!String.IsNullOrEmpty(Type))
-                {
-                    sb.Append(" - ");
-                    sb.Append(Type);
-                }
+                sb.Append(" #MTG ");
 
-                sb.Append(" #MTG #MagicTheGathering");
+                if (UseCredits())
+                {
+                    sb.Append($"Revealed by: {CreditsUrl}");
+                    sb.Append(lineBreak);
+                }
 
                 sb.Append(lineBreak);
                 sb.Append(FullUrlWebSite);
 
-                return sb.ToString();
+                var txt = sb.ToString();
+                if (txt.Length > 240)
+                {
+                    txt = txt.Substring(0, 239);
+                }
+                return txt;
             }
         }
 
