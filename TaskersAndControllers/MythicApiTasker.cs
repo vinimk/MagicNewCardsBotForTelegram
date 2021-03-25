@@ -22,6 +22,13 @@ namespace MagicNewCardsBot
             return url;
         }
 
+        protected bool IsSameCard(string url1, string url2)
+        {
+            var endingUrl1 = url1[(url1.LastIndexOf('/') + 1)..];
+            string endingUrl2 = url2[(url2.LastIndexOf('/') + 1)..];
+            return endingUrl1 == endingUrl2;
+        }
+
         #region Overrided Methods
 
         async override protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
@@ -29,7 +36,7 @@ namespace MagicNewCardsBot
             //loads the website
 
             HtmlDocument doc = await GetHtmlDocumentFromUrlAsync(_websiteUrl + _page);
-
+            List<String> lstAlreadyReturnedCards = new List<string>();
             //all the cards are a a href so we get all of that
             HtmlNodeCollection nodesGridCards = doc.DocumentNode.SelectNodes("//div[contains(@class, 'grid-card')]");
             if (nodesGridCards != null)
@@ -45,6 +52,11 @@ namespace MagicNewCardsBot
                         string cardUrl = nodeImg.ParentNode.Attributes["href"].Value.Trim().ToString();
                         cardUrl = ValidateAndFixUrl(cardUrl);
 
+
+                        if (lstAlreadyReturnedCards.Contains(cardUrl))
+                        {
+                            continue;
+                        }
 
                         string imageUrl = nodeImg.Attributes["src"].Value.Trim().ToString();
                         imageUrl = ValidateAndFixUrl(imageUrl);
@@ -66,11 +78,12 @@ namespace MagicNewCardsBot
                         catch { }
 
 
+                        lstAlreadyReturnedCards.Add(card.FullUrlWebSite);
                         yield return card;
                         crawlsFromThisSite++;
                     }
 
-                    //only get the lastest 50
+                    //only get the lastest
                     if (crawlsFromThisSite == Database.MAX_CARDS)
                         break;
                 }
@@ -90,6 +103,20 @@ namespace MagicNewCardsBot
 
                     try
                     {
+                        string alternativeSideImageUrl = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'DFC beaxface')]").ParentNode.SelectSingleNode(".//img").Attributes["src"].Value.Trim();
+                        alternativeSideImageUrl = ValidateAndFixUrl(alternativeSideImageUrl);
+                        alternativeSideImageUrl = alternativeSideImageUrl.Replace("../", String.Empty);
+                        if (!IsSameCard(alternativeSideImageUrl, card.ImageUrl))
+                        {
+                            if (await Utils.IsValidUrl(alternativeSideImageUrl))
+                            {
+                                card.AddExtraSide(new Card() { ImageUrl = alternativeSideImageUrl });
+                            }
+                        }
+                    }
+                    catch { }
+                    try
+                    {
                         var nodeScript = html.DocumentNode.SelectSingleNode("//script[contains(text(),'/cards/')]");
                         if (nodeScript != null)
                         {
@@ -99,12 +126,13 @@ namespace MagicNewCardsBot
                                 {
                                     foreach (string part in line.Split("\""))
                                     {
-                                        if (part.Contains("https") || part.Contains("http"))
+                                        if ((part.Contains("https") || part.Contains("http")) &&
+                                            !part.Contains("zzzzzzzzz") &&
+                                            !part.Contains("XXXXXXXX"))
                                         {
                                             string alterImageUrl = part.Trim();
-                                            var alterName = alterImageUrl[(alterImageUrl.LastIndexOf('/') + 1)..];
-                                            string originalName = card.ImageUrl[(card.ImageUrl.LastIndexOf('/') + 1)..];
-                                            if (alterName != originalName)
+
+                                            if (!IsSameCard(alterImageUrl, card.ImageUrl))
                                             {
                                                 if (await Utils.IsValidUrl(alterImageUrl))
                                                 {

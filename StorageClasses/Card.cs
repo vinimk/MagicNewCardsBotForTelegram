@@ -311,8 +311,10 @@ namespace MagicNewCardsBot
         {
             if (this.ExtraSides == null)
                 this.ExtraSides = new List<Card>();
-
-            this.ExtraSides.Add(card);
+            if (!this.ExtraSides.Exists(x => x.ImageUrl.Equals(card.ImageUrl)))
+            {
+                this.ExtraSides.Add(card);
+            }
         }
 
         #endregion

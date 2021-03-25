@@ -17,7 +17,7 @@ namespace MagicNewCardsBot
             await foreach (Card card in GetAvaliableCardsInWebSiteAsync())
             {
                 var cardInDb = await Database.IsCardInDatabaseAsync(card, true);
-                if (cardInDb == false)
+                if (cardInDb == false /*|| card.FullUrlWebSite == "https://mythicspoiler.com/khm/cards/halvargodofbattle.html"*/)
                 {
                     await GetAdditionalInfoAsync(card);
                     if (card.ExtraSides != null && card.ExtraSides.Count > 0)
@@ -35,7 +35,8 @@ namespace MagicNewCardsBot
                     }
 
                     //adds in the database
-                    await Database.InsertScryfallCardAsync(card);
+                    if (!cardInDb)
+                        await Database.InsertScryfallCardAsync(card);
 
                     yield return card;
                 }

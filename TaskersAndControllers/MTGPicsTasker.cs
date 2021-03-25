@@ -71,7 +71,7 @@ namespace MagicNewCardsBot
                             crawlsFromThisSite++;
                         }
 
-                        //only get the lastest 50
+                        //only get the lastest
                         if (crawlsFromThisSite == Database.MAX_CARDS)
                             break;
                     }

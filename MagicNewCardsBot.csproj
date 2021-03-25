@@ -7,9 +7,9 @@
 
   <ItemGroup>
     <PackageReference Include="CodeHollow.FeedReader" Version="1.2.1" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.31" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.32" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="MySqlConnector" Version="1.3.1" />
+    <PackageReference Include="MySqlConnector" Version="1.3.2" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
     <PackageReference Include="Telegram.Bot" Version="15.7.1" />
     <PackageReference Include="TweetinviAPI" Version="5.0.3" />
