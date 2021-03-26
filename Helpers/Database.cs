@@ -72,42 +72,45 @@ namespace MagicNewCardsBot
 
             foreach (Card card in mainCard.ExtraSides)
             {
-                using MySqlCommand cmd = conn.CreateCommand();
-                cmd.CommandText = @"SELECT  count(1)
+                if (!string.IsNullOrWhiteSpace(card.FullUrlWebSite))
+                {
+                    using MySqlCommand cmd = conn.CreateCommand();
+                    cmd.CommandText = @"SELECT  count(1)
                                             FROM ScryfallCard
                                             WHERE
                                             FullUrlWebSite = @FullUrlWebSite AND
                                             IsCardSent = @IsCardSent AND
 											Date > @Date";
 
-                cmd.Parameters.Add(new MySqlParameter()
-                {
-                    ParameterName = "@FullUrlWebSite",
-                    DbType = DbType.StringFixedLength,
-                    Value = card.FullUrlWebSite,
-                });
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@FullUrlWebSite",
+                        DbType = DbType.StringFixedLength,
+                        Value = card.FullUrlWebSite,
+                    });
 
-                cmd.Parameters.Add(new MySqlParameter()
-                {
-                    ParameterName = "@IsCardSent",
-                    DbType = DbType.Boolean,
-                    Value = isSent,
-                });
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@IsCardSent",
+                        DbType = DbType.Boolean,
+                        Value = isSent,
+                    });
 
-                //dominaria workaround 
-                cmd.Parameters.Add(new MySqlParameter()
-                {
-                    ParameterName = "@Date",
-                    MySqlDbType = MySqlDbType.DateTime,
-                    Value = new DateTime(2018, 03, 11, 0, 0, 0), //the day that scryfall sent all the new card 
-                });
+                    //dominaria workaround 
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@Date",
+                        MySqlDbType = MySqlDbType.DateTime,
+                        Value = new DateTime(2018, 03, 11, 0, 0, 0), //the day that scryfall sent all the new card 
+                    });
 
-                using DbDataReader reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    count = await reader.GetFieldValueAsync<Int64>(0);
-                    if (count > 0)
-                        return true;
+                    using DbDataReader reader = await cmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        count = await reader.GetFieldValueAsync<Int64>(0);
+                        if (count > 0)
+                            return true;
+                    }
                 }
             }
 

@@ -17,28 +17,31 @@ namespace MagicNewCardsBot
             await foreach (Card card in GetAvaliableCardsInWebSiteAsync())
             {
                 var cardInDb = await Database.IsCardInDatabaseAsync(card, true);
-                if (cardInDb == false /*|| card.FullUrlWebSite == "https://mythicspoiler.com/khm/cards/halvargodofbattle.html"*/)
+                if (cardInDb == false)
                 {
                     await GetAdditionalInfoAsync(card);
-                    if (card.ExtraSides != null && card.ExtraSides.Count > 0)
+                    if (!string.IsNullOrEmpty(card.ImageUrl))
                     {
-                        if (await Database.IsExtraSideInDatabase(card, true) == true)
-                            continue;
-
-                        foreach (Card extraSide in card.ExtraSides)
+                        if (card.ExtraSides != null && card.ExtraSides.Count > 0)
                         {
-                            if (!string.IsNullOrEmpty(extraSide.FullUrlWebSite))
-                                await Database.InsertScryfallCardAsync(card, true);
-                            else
-                                extraSide.FullUrlWebSite = card.FullUrlWebSite;
+                            if (await Database.IsExtraSideInDatabase(card, true) == true)
+                                continue;
+
+                            foreach (Card extraSide in card.ExtraSides)
+                            {
+                                if (!string.IsNullOrEmpty(extraSide.FullUrlWebSite))
+                                    await Database.InsertScryfallCardAsync(card, true);
+                                else
+                                    extraSide.FullUrlWebSite = card.FullUrlWebSite;
+                            }
                         }
+
+                        //adds in the database
+                        if (!cardInDb)
+                            await Database.InsertScryfallCardAsync(card);
+
+                        yield return card;
                     }
-
-                    //adds in the database
-                    if (!cardInDb)
-                        await Database.InsertScryfallCardAsync(card);
-
-                    yield return card;
                 }
             }
         }

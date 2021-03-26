@@ -261,7 +261,7 @@ namespace MagicNewCardsBot
 
         public String GetTwitterText()
         {
-            string text = GetFullText() + " #MTG #MagicTheGathering";
+            string text = GetFullText() + " #MTG ";
             if (text.Length < 240)
             {
                 return text.Replace(URL_REPLACE_TEXT, CreditsUrl);

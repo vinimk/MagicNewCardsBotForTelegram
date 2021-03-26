@@ -12,6 +12,7 @@ namespace MagicNewCardsBot
         #region Definitions
         private readonly string _telegramBotApiKey;
         private readonly Telegram.Bot.TelegramBotClient _botClient;
+        private readonly int MAX_CONCURRENT_MESSAGES = 50;
         private int _offset;
         private readonly long? _idUserDebug;
         #endregion
@@ -39,11 +40,18 @@ namespace MagicNewCardsBot
                 await SendCardToChatAsync(card, new Chat { Id = _idUserDebug.Value, Type = Telegram.Bot.Types.Enums.ChatType.Private, Title = "test", FirstName = "test" });
             else
             {
+                int sendingChats = 0;
                 //goes trough all the chats and send a message for each one
                 await foreach (Chat chat in Database.GetAllChatsAsync())
                 {
                     Utils.LogInformation($"Sending {card} to {chat.Id}");
-                    await SendCardToChatAsync(card, chat);
+                    _ = SendCardToChatAsync(card, chat);
+                    sendingChats++;
+                    if (sendingChats >= MAX_CONCURRENT_MESSAGES)
+                    {
+                        await Task.Delay(1000);
+                        sendingChats = 0;
+                    }
                 }
             }
         }
