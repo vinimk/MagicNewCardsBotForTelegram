@@ -22,7 +22,7 @@ namespace MagicNewCardsBot
             Utils.LogInformation($"DebugMode: {options.IsDebugMode}");
 
             _isDebugMode = options.IsDebugMode;
-            _tasker = new MagicSpoilerTasker();
+            _tasker = new MTGPicsTasker();
 
             TimeInternalMS = options.TimeExecuteIntervalInMs;
 
