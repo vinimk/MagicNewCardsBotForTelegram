@@ -43,7 +43,6 @@ namespace MagicNewCardsBot
         {
             if (!_isDebugMode)
             {
-                await TelegramController.InitialUpdateAsync();
                 TelegramController.HookUpdateEvent();
             }
             else
