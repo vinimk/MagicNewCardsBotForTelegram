@@ -118,7 +118,7 @@ namespace MagicNewCardsBot
                         lstPhotos.Add(media);
                     }
 
-                    await _botClient.SendMediaGroupAsync(lstPhotos, chat);
+                    await _botClient.SendMediaGroupAsync(chat, lstPhotos);
                 }
                 else
                 {
