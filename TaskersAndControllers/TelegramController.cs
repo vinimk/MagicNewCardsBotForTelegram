@@ -276,6 +276,7 @@ namespace MagicNewCardsBot
             {
                 Utils.LogError(apiRequestException.Message);
                 Utils.LogError(apiRequestException.StackTrace);
+                await Database.InsertLogAsync("HandleErrorAsync", String.Empty, exception.ToString());
             }
         }
 
