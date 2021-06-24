@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using Telegram.Bot.Args;
+using Telegram.Bot;
+using Telegram.Bot.Exceptions;
+using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 
 namespace MagicNewCardsBot
@@ -58,10 +61,10 @@ namespace MagicNewCardsBot
 
         public void HookUpdateEvent()
         {
-            //removes then adds the handler, that way it make sure that the event is handled
-            _botClient.OnUpdate -= BotClientOnUpdate;
-            _botClient.OnUpdate += BotClientOnUpdate;
-            _botClient.StartReceiving();
+            var cts = new CancellationTokenSource();
+            var cancellationToken = cts.Token;
+
+            _botClient.StartReceiving(new DefaultUpdateHandler(HandleUpdateAsync, HandleErrorAsync), cancellationToken);
         }
 
 
@@ -249,27 +252,33 @@ namespace MagicNewCardsBot
         #endregion
 
         #region Events
-        private void BotClientOnUpdate(object sender, UpdateEventArgs args)
+
+        async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            try
+            if (update.Message is Message message)
             {
-                if (args != null &&
-                    args.Update != null &&
-                    args.Update.Message != null &&
-                    args.Update.Message.Chat != null)
+                try
                 {
-                    Utils.LogInformation(String.Format("Handling event ID:{0} from user {1}{2}", args.Update.Id, args.Update.Message.Chat.FirstName, args.Update.Message.Chat.Title));
-                    InsertInDbIfNotYetAddedAsync(args.Update.Message.Chat).Wait();
-                    _offset = args.Update.Id;
+                    Utils.LogInformation(String.Format("Handling event ID:{0} from user {1}{2}", message.MessageId, message.Chat.FirstName, message.Chat.Title));
+                    await InsertInDbIfNotYetAddedAsync(message.Chat);
+                }
+                catch (Exception ex)
+                {
+                    Utils.LogError(ex.Message);
+                    Utils.LogError(ex.StackTrace);
                 }
             }
-            catch (Exception ex)
-            {
-                Utils.LogError(ex.Message);
-                Utils.LogError(ex.StackTrace);
-            }
-
         }
+
+        async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+        {
+            if (exception is ApiRequestException apiRequestException)
+            {
+                Utils.LogError(apiRequestException.Message);
+                Utils.LogError(apiRequestException.StackTrace);
+            }
+        }
+
         #endregion
     }
 }
