@@ -25,12 +25,16 @@ namespace MagicNewCardsBot
                         if (card.ExtraSides != null && card.ExtraSides.Count > 0)
                         {
                             if (await Database.IsExtraSideInDatabase(card, true) == true)
+                            {
+                                //if it is here, this card is not in the database, but an extra side is, so we put this one aswell in the database just for better control 
+                                await Database.InsertScryfallCardAsync(card);
                                 continue;
+                            }
 
                             foreach (Card extraSide in card.ExtraSides)
                             {
                                 if (!string.IsNullOrEmpty(extraSide.FullUrlWebSite))
-                                    await Database.InsertScryfallCardAsync(card, true);
+                                    await Database.InsertScryfallCardAsync(extraSide, true);
                                 else
                                     extraSide.FullUrlWebSite = card.FullUrlWebSite;
                             }
