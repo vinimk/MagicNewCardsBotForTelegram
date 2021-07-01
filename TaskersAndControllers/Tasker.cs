@@ -28,7 +28,7 @@ namespace MagicNewCardsBot
                             if (await Database.IsExtraSideInDatabase(card, true) == true)
                             {
                                 bool flagContinue = false;
-                                await Database.InsertScryfallCardAsync(card, true);
+                                await Database.InsertScryfallCardAsync(card, true,card.Rarity.HasValue);
                                 foreach (var extraSide in card.ExtraSides)
                                 {
                                     if (string.IsNullOrEmpty(extraSide.FullUrlWebSite))

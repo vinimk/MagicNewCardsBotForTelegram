@@ -214,7 +214,7 @@ namespace MagicNewCardsBot
         async public static Task<CardStatus> GetCardStatus(Card card, Boolean isSent)
         {
             using MySqlConnection conn = new(_connectionString);
-            int? hasRarity = -1;
+            int? hasRarity = null;
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
@@ -411,7 +411,7 @@ namespace MagicNewCardsBot
 
         #region Insert Methods
 
-        async public static Task InsertScryfallCardAsync(Card card, bool isSent = false, bool hasRarity = false)
+        async public static Task InsertScryfallCardAsync(Card card, bool isSent, bool hasRarity)
         {
             if (await GetCardStatus(card, false) != CardStatus.NotFound)
                 return;
