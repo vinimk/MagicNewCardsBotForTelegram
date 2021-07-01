@@ -17,7 +17,7 @@ namespace MagicNewCardsBot
             //get the aditional infos from the website
             await foreach (Card card in GetAvaliableCardsInWebSiteAsync())
             {
-                var cardInDb = await Database.GetCardStatus(card, true);
+                var cardInDb = await Database.GetCardStatus(card);
                 if (cardInDb != Database.CardStatus.Complete)
                 {
                     await GetAdditionalInfoAsync(card);
@@ -28,7 +28,7 @@ namespace MagicNewCardsBot
                             if (await Database.IsExtraSideInDatabase(card, true) == true)
                             {
                                 bool flagContinue = false;
-                                await Database.InsertScryfallCardAsync(card, true,card.Rarity.HasValue);
+                                await Database.InsertScryfallCardAsync(card, true, card.Rarity.HasValue);
                                 foreach (var extraSide in card.ExtraSides)
                                 {
                                     if (string.IsNullOrEmpty(extraSide.FullUrlWebSite))
@@ -36,7 +36,7 @@ namespace MagicNewCardsBot
                                         extraSide.FullUrlWebSite = card.FullUrlWebSite;
                                     }
 
-                                    var statusExtraSide = await Database.GetCardStatus(extraSide, true);
+                                    var statusExtraSide = await Database.GetCardStatus(extraSide);
 
                                     switch (statusExtraSide)
                                     {
@@ -52,7 +52,7 @@ namespace MagicNewCardsBot
                                     }
                                 }
 
-                                if(flagContinue)
+                                if (flagContinue)
                                 {
                                     continue;
                                 }

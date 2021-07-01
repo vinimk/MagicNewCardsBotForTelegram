@@ -19,7 +19,8 @@ namespace MagicNewCardsBot
         {
             NotFound = 0,
             Complete = 1,
-            WithoutRarity = 2
+            WithoutRarity = 2,
+            NotSent = 3
         }
 
         public static void SetConnectionString(String connectionString)
@@ -211,35 +212,29 @@ namespace MagicNewCardsBot
             return false;
         }
 
-        async public static Task<CardStatus> GetCardStatus(Card card, Boolean isSent)
+        async public static Task<CardStatus> GetCardStatus(Card card)
         {
             using MySqlConnection conn = new(_connectionString);
             int? hasRarity = null;
+            int? isSent = null;
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
             }
 
             using MySqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = @"SELECT HasRarity
+            cmd.CommandText = @"SELECT HasRarity,
+                                       IsCardSent
                                             FROM ScryfallCard
                                             WHERE
                                             FullUrlWebSite = @FullUrlWebSite AND
-                                            IsCardSent = @IsCardSent AND
-											Date > @Date";
+                                            Date > @Date";
 
             cmd.Parameters.Add(new MySqlParameter()
             {
                 ParameterName = "@FullUrlWebSite",
                 DbType = DbType.StringFixedLength,
                 Value = card.FullUrlWebSite,
-            });
-
-            cmd.Parameters.Add(new MySqlParameter()
-            {
-                ParameterName = "@IsCardSent",
-                DbType = DbType.Boolean,
-                Value = isSent,
             });
 
             //dominaria workaround 
@@ -255,12 +250,19 @@ namespace MagicNewCardsBot
                 while (await reader.ReadAsync())
                 {
                     hasRarity = await reader.GetFieldValueAsync<int>(0);
+                    isSent = await reader.GetFieldValueAsync<int>(1);
                 }
             }
 
             if (conn.State == ConnectionState.Open)
             {
                 conn.Close();
+            }
+
+            if(isSent.HasValue && 
+                isSent.Value == 0)
+            {
+                return CardStatus.NotSent;
             }
 
             if (hasRarity.HasValue)
@@ -413,8 +415,12 @@ namespace MagicNewCardsBot
 
         async public static Task InsertScryfallCardAsync(Card card, bool isSent, bool hasRarity)
         {
-            if (await GetCardStatus(card, false) != CardStatus.NotFound)
+            if (await GetCardStatus(card) != CardStatus.NotFound)
+            {
+                await UpdateIsSentAsync(card, isSent);
+                await UpdateHasRarityAsync(card, hasRarity);
                 return;
+            }
 
             using MySqlConnection conn = new(_connectionString);
             if (conn.State != ConnectionState.Open)
