@@ -181,6 +181,32 @@ namespace MagicNewCardsBot
                                 }
                             }
                             break;
+                        case CardFields.Rarity:
+                            string rarityValue =  node.Attributes?["src"].Value;
+                            Rarity? rarity = null;
+                            rarityValue = rarityValue.Replace("graph/rarity/", string.Empty).Trim();
+                            switch (rarityValue)
+                            {
+                                case "carte30.png":
+                                    rarity = Rarity.Common;
+                                    break;
+                                case "carte20.png":
+                                    rarity = Rarity.Uncommon;
+                                    break;
+                                case "carte10.png":
+                                    rarity = Rarity.Rare;
+                                    break;
+                                case "carte4.png":
+                                    rarity = Rarity.Mythic;
+                                    break;
+                            }
+
+                            if(rarity.HasValue)
+                            {
+                                card.Rarity = rarity;
+                            }
+
+                            break;
                         default:
                             break;
                     }
@@ -241,6 +267,10 @@ namespace MagicNewCardsBot
 
             if (nodesPT != null)
                 ProcessFieldByType(nodesPT, card, CardFields.PT);
+
+            var nodesRarity = html.DocumentNode.SelectNodes("//img[contains(@src,'graph/rarity/')]");
+            if (nodesRarity != null)
+                ProcessFieldByType(nodesRarity,card, CardFields.Rarity);
 
         }
 

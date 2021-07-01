@@ -15,6 +15,13 @@ namespace MagicNewCardsBot
 
         public static readonly Int32 MAX_CARDS = 200;
 
+        public enum CardStatus
+        {
+            NotFound = 0,
+            Complete = 1,
+            WithoutRarity = 2
+        }
+
         public static void SetConnectionString(String connectionString)
         {
             _connectionString = connectionString;
@@ -46,6 +53,88 @@ namespace MagicNewCardsBot
                     ParameterName = "@IsCardSent",
                     DbType = DbType.Boolean,
                     Value = isSent,
+                });
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            if (conn.State == ConnectionState.Open)
+            {
+                conn.Close();
+            }
+        }
+
+        async public static Task UpdateHasRarityAsync(Card card, Boolean hasRarity)
+        {
+            using MySqlConnection conn = new(_connectionString);
+            if (conn.State != ConnectionState.Open)
+            {
+                await conn.OpenAsync();
+            }
+            using (MySqlCommand cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"UPDATE  ScryfallCard
+                                        SET     HasRarity =    @HasRarity
+                                        WHERE
+                                            FullUrlWebSite = @FullUrlWebSite";
+
+                cmd.Parameters.Add(new MySqlParameter()
+                {
+                    ParameterName = "@FullUrlWebSite",
+                    DbType = DbType.StringFixedLength,
+                    Value = card.FullUrlWebSite,
+                });
+                cmd.Parameters.Add(new MySqlParameter()
+                {
+                    ParameterName = "@HasRarity",
+                    DbType = DbType.Boolean,
+                    Value = hasRarity,
+                });
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            if (conn.State == ConnectionState.Open)
+            {
+                conn.Close();
+            }
+        }
+
+        async public static Task UpdateWantedRaritiesForChatAsync(Chat chat, string wantedRarities)
+        {
+            using MySqlConnection conn = new(_connectionString);
+            if (conn.State != ConnectionState.Open)
+            {
+                await conn.OpenAsync();
+            }
+            using (MySqlCommand cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"UPDATE  Chat
+                                        SET     WantedRarities =    @WantedRarities
+                                        WHERE
+                                            ChatId = @ChatId";
+
+                if (wantedRarities == "ALL")
+                {
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@WantedRarities",
+                        DbType = DbType.StringFixedLength,
+                        Value = DBNull.Value,
+                    });
+                }
+                else
+                {
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@WantedRarities",
+                        DbType = DbType.String,
+                        Value = wantedRarities,
+                    });
+                }
+                cmd.Parameters.Add(new MySqlParameter()
+                {
+                    ParameterName = "@ChatId",
+                    DbType = DbType.Int64,
+                    Value = chat.Id,
                 });
 
                 await cmd.ExecuteNonQueryAsync();
@@ -122,17 +211,17 @@ namespace MagicNewCardsBot
             return false;
         }
 
-        async public static Task<Boolean> IsCardInDatabaseAsync(Card card, Boolean isSent)
+        async public static Task<CardStatus> GetCardStatus(Card card, Boolean isSent)
         {
             using MySqlConnection conn = new(_connectionString);
-            Int64 count = -1;
+            int? hasRarity = -1;
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
             }
 
             using MySqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = @"SELECT  count(1)
+            cmd.CommandText = @"SELECT HasRarity
                                             FROM ScryfallCard
                                             WHERE
                                             FullUrlWebSite = @FullUrlWebSite AND
@@ -165,7 +254,7 @@ namespace MagicNewCardsBot
             {
                 while (await reader.ReadAsync())
                 {
-                    count = await reader.GetFieldValueAsync<Int64>(0);
+                    hasRarity = await reader.GetFieldValueAsync<int>(0);
                 }
             }
 
@@ -174,7 +263,19 @@ namespace MagicNewCardsBot
                 conn.Close();
             }
 
-            return count > 0;
+            if (hasRarity.HasValue)
+            {
+                if (hasRarity.Value == 1)
+                {
+                    return CardStatus.Complete;
+                }
+                else
+                {
+                    return CardStatus.WithoutRarity;
+                }
+            }
+
+            return CardStatus.NotFound;
         }
 
         async public static Task<Boolean> ChatExistsAsync(Chat chat)
@@ -231,7 +332,8 @@ namespace MagicNewCardsBot
                                             ifNull(SetURL,''),
                                             ifNull(SetName,'')
                                             FROM Sets 
-                                            WHERE ShouldCrawl = 1 ";
+                                            WHERE ShouldCrawl = 1
+                                            ORDER BY SetID desc";
 
                 using DbDataReader reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -252,7 +354,7 @@ namespace MagicNewCardsBot
             return retList;
         }
 
-        async public static IAsyncEnumerable<Chat> GetAllChatsAsync()
+        async public static IAsyncEnumerable<Chat> GetChatsAsync(string wantedRarities = null)
         {
             using MySqlConnection conn = new(_connectionString);
             List<Chat> retList = new();
@@ -266,7 +368,24 @@ namespace MagicNewCardsBot
                                             ifNull(Title,''),
                                             ifNull(FirstName,''),
                                             ifNull(Type,'')
-                                            FROM Chat WHERE IsBlocked = 0";
+                                            FROM Chat 
+                                            WHERE IsBlocked = 0 
+                                            ";
+
+                if (!String.IsNullOrWhiteSpace(wantedRarities))
+                {
+                    cmd.CommandText += "AND WantedRarities like @WantedRarities";
+                    cmd.Parameters.Add(new MySqlParameter()
+                    {
+                        ParameterName = "@WantedRarities",
+                        DbType = DbType.String,
+                        Value = $"%{wantedRarities}%",
+                    });
+                }
+                else
+                {
+                    cmd.CommandText += "AND WantedRarities IS NULL";
+                }
 
                 using DbDataReader reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -292,9 +411,9 @@ namespace MagicNewCardsBot
 
         #region Insert Methods
 
-        async public static Task InsertScryfallCardAsync(Card card, bool isSent = false)
+        async public static Task InsertScryfallCardAsync(Card card, bool isSent = false, bool hasRarity = false)
         {
-            if (await IsCardInDatabaseAsync(card, false))
+            if (await GetCardStatus(card, false) != CardStatus.NotFound)
                 return;
 
             using MySqlConnection conn = new(_connectionString);
@@ -308,12 +427,14 @@ namespace MagicNewCardsBot
                                                 (ScryfallCardId,
                                                 Name,
                                                 FullUrlWebSite,
-                                                IsCardSent)
+                                                IsCardSent,
+                                                HasRarity)
                                         VALUES
                                                 (@ScryfallCardId,
                                                 @Name,
                                                 @FullUrlWebSite,
-                                                @IsCardSent
+                                                @IsCardSent,
+                                                @HasRarity
                                                 )";
 
                 String id;
@@ -352,6 +473,13 @@ namespace MagicNewCardsBot
                     ParameterName = "@IsCardSent",
                     DbType = DbType.Boolean,
                     Value = isSent,
+                });
+
+                cmd.Parameters.Add(new MySqlParameter()
+                {
+                    ParameterName = "@HasRarity",
+                    DbType = DbType.Boolean,
+                    Value = hasRarity,
                 });
 
                 await cmd.ExecuteNonQueryAsync();

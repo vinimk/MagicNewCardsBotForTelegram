@@ -10,12 +10,10 @@ namespace MagicNewCardsBot
     {
 
         private readonly ILogger<Worker> logger;
-        private readonly WorkerOptions options;
 
         public Worker(ILogger<Worker> logger, WorkerOptions options)
         {
             this.logger = logger;
-            this.options = options;
             Utils.SetLogger(this.logger);
 
             Utils.LogInformation("Initializing");
@@ -84,44 +82,68 @@ namespace MagicNewCardsBot
             }
         }
 
-        async private static Task DistributeCardAsync(Card newItem)
+        async private static Task DistributeCardAsync(Card card)
         {
-            if (newItem.ImageUrl != null)
+            if (card.ImageUrl != null)
             {
                 if (!_isDebugMode)
-                    await Database.UpdateIsSentAsync(newItem, true);
+                    await Database.UpdateIsSentAsync(card, true);
 
 
-                try
-                {
-                    if (!_isDebugMode)
-                    {
-                        Utils.LogInformation(String.Format("Tweeting new card {0}", newItem.Name));
-                        await TwitterController.TweetCardAsync(newItem);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await Database.InsertLogAsync("Twitter send image", newItem.Name, ex.ToString());
-                    Utils.LogInformation(String.Format("Failed to send to twitter spoil {0}", newItem.Name));
-                    Utils.LogInformation(ex.Message);
-                    Utils.LogInformation(ex.StackTrace);
-                }
-
-                try
-                {
-                    await TelegramController.SendImageToAllChatsAsync(newItem);
-                }
-                catch (Exception ex)
+                if (card.SendTo == SendTo.Both || 
+                    card.SendTo == SendTo.OnlyAll)
                 {
                     try
                     {
-                        await Database.InsertLogAsync("Telegram send images to all", newItem.Name, ex.ToString());
+                        if (!_isDebugMode)
+                        {
+                            Utils.LogInformation(String.Format("Tweeting new card {0}", card.Name));
+                            await TwitterController.TweetCardAsync(card);
+                        }
                     }
-                    catch { } //if there is any error here, we don't wanna stop the bot
-                    Utils.LogInformation(String.Format("Failed to send to telegram spoil {0}", newItem.Name));
-                    Utils.LogInformation(ex.Message);
-                    Utils.LogInformation(ex.StackTrace);
+                    catch (Exception ex)
+                    {
+                        await Database.InsertLogAsync("Twitter send image", card.Name, ex.ToString());
+                        Utils.LogInformation(String.Format("Failed to send to twitter spoil {0}", card.Name));
+                        Utils.LogInformation(ex.Message);
+                        Utils.LogInformation(ex.StackTrace);
+                    }
+
+                    try
+                    {
+                        await TelegramController.SendImageToAllChatsAsync(card);
+                    }
+                    catch (Exception ex)
+                    {
+                        try
+                        {
+                            await Database.InsertLogAsync("Telegram send images to all", card.Name, ex.ToString());
+                        }
+                        catch { } //if there is any error here, we don't wanna stop the bot
+                        Utils.LogInformation(String.Format("Failed to send to telegram spoil {0}", card.Name));
+                        Utils.LogInformation(ex.Message);
+                        Utils.LogInformation(ex.StackTrace);
+                    }
+                }
+
+                if(card.SendTo == SendTo.Both ||
+                   card.SendTo == SendTo.OnlyRarity )
+                {
+                    try
+                    {
+                        await TelegramController.SendImageToChatsByRarityAsync(card);
+                    }
+                    catch (Exception ex)
+                    {
+                        try
+                        {
+                            await Database.InsertLogAsync("Telegram send images to rarity", card.Name, ex.ToString());
+                        }
+                        catch { } //if there is any error here, we don't wanna stop the bot
+                        Utils.LogInformation(String.Format("Failed to send to telegram rarirty spoil {0}", card.Name));
+                        Utils.LogInformation(ex.Message);
+                        Utils.LogInformation(ex.StackTrace);
+                    }
                 }
             }
         }

@@ -37,26 +37,36 @@ namespace MagicNewCardsBot
             await GetInitialUpdateEventsAsync();
         }
 
+        async private Task SendCardToChatsAsync(Card card, IAsyncEnumerable<Chat> chats)
+        {
+            int sendingChats = 0;
+            //goes trough all the chats and send a message for each one
+            await foreach (Chat chat in chats)
+            {
+                Utils.LogInformation($"Sending {card} to {chat.Id}");
+                _ = SendCardToChatAsync(card, chat);
+                sendingChats++;
+                if (sendingChats >= MAX_CONCURRENT_MESSAGES)
+                {
+                    await Task.Delay(1000);
+                    sendingChats = 0;
+                }
+            }
+        }
+
         async public Task SendImageToAllChatsAsync(Card card)
         {
             if (_idUserDebug.HasValue)
                 await SendCardToChatAsync(card, new Chat { Id = _idUserDebug.Value, Type = Telegram.Bot.Types.Enums.ChatType.Private, Title = "test", FirstName = "test" });
             else
             {
-                int sendingChats = 0;
-                //goes trough all the chats and send a message for each one
-                await foreach (Chat chat in Database.GetAllChatsAsync())
-                {
-                    Utils.LogInformation($"Sending {card} to {chat.Id}");
-                    _ = SendCardToChatAsync(card, chat);
-                    sendingChats++;
-                    if (sendingChats >= MAX_CONCURRENT_MESSAGES)
-                    {
-                        await Task.Delay(1000);
-                        sendingChats = 0;
-                    }
-                }
+                await SendCardToChatsAsync(card, Database.GetChatsAsync());
             }
+        }
+
+        async public Task SendImageToChatsByRarityAsync(Card card)
+        {
+            await SendCardToChatsAsync(card, Database.GetChatsAsync(card.GetRarityCharacter()));
         }
 
         public void HookUpdateEvent()
@@ -261,6 +271,24 @@ namespace MagicNewCardsBot
                 {
                     Utils.LogInformation(String.Format("Handling event ID:{0} from user {1}{2}", message.MessageId, message.Chat.FirstName, message.Chat.Title));
                     await InsertInDbIfNotYetAddedAsync(message.Chat);
+
+                    //commands handling
+                    if (message.EntityValues != null)
+                    { 
+                        foreach(var entity in message.EntityValues)
+                        {
+                            if(entity.Contains($"/rarity"))
+                            {
+                                var value = message.Text.Replace(entity, string.Empty);
+                                var validString = Utils.ReturnValidRarityFromCommand(value);
+                                if (!string.IsNullOrWhiteSpace(validString))
+                                {
+                                    await Database.UpdateWantedRaritiesForChatAsync(message.Chat, validString);
+                                    await _botClient.SendTextMessageAsync(message.Chat, "Updated rarities that will be recieved to: " + validString, cancellationToken: cancellationToken);
+                                }
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

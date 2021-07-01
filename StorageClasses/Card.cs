@@ -6,6 +6,7 @@ using System.Text;
 
 namespace MagicNewCardsBot
 {
+
     public class Card
     {
         private static readonly string URL_REPLACE_TEXT = "twitterUrl23Characters";
@@ -67,12 +68,19 @@ namespace MagicNewCardsBot
             get;
             set;
         }
+
+        public Rarity? Rarity
+        {
+            get;
+            set;
+        }
+
         public List<Card> ExtraSides
         {
             get;
             set;
         }
-        public Boolean IsCardSent
+        public SendTo SendTo
         {
             get;
             set;
@@ -92,13 +100,11 @@ namespace MagicNewCardsBot
             get;
             set;
         }
-
         public String Set
         {
             get;
             set;
         }
-
         public int? Loyalty
         {
             get;
@@ -132,6 +138,7 @@ namespace MagicNewCardsBot
         public Card()
         {
             ExtraSides = new List<Card>();
+            SendTo = SendTo.Both;
         }
 
         public String GetFullText()
@@ -294,6 +301,21 @@ namespace MagicNewCardsBot
                 return txt;
             }
         }
+        public string GetRarityCharacter()
+        {
+            if(Rarity.HasValue)
+            {
+                return Rarity switch
+                {
+                    MagicNewCardsBot.Rarity.Common => "C",
+                    MagicNewCardsBot.Rarity.Uncommon => "U",
+                    MagicNewCardsBot.Rarity.Rare => "R",
+                    MagicNewCardsBot.Rarity.Mythic => "M",
+                    _ => string.Empty,
+                };
+            }
+            return string.Empty;
+        }
 
         public override string ToString()
         {
@@ -318,5 +340,20 @@ namespace MagicNewCardsBot
         }
 
         #endregion
+    }
+
+    public enum Rarity
+    {
+        Common = 0,
+        Uncommon = 1,
+        Rare = 2,
+        Mythic = 3
+    }
+
+    public enum SendTo
+    {
+        Both = 0,
+        OnlyRarity = 1,
+        OnlyAll = 2
     }
 }

@@ -6,6 +6,7 @@
         ManaCost,
         Type,
         Text,
-        PT
+        PT,
+        Rarity
     }
 }
