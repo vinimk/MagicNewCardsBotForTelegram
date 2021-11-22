@@ -73,8 +73,7 @@ namespace MagicNewCardsBot
         {
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
-
-            _botClient.StartReceiving(new DefaultUpdateHandler(HandleUpdateAsync, HandleErrorAsync), cancellationToken);
+            _botClient.StartReceiving(HandleUpdateAsync, HandleErrorAsync, null, cancellationToken);
         }
 
 
@@ -274,10 +273,10 @@ namespace MagicNewCardsBot
 
                     //commands handling
                     if (message.EntityValues != null)
-                    { 
-                        foreach(var entity in message.EntityValues)
+                    {
+                        foreach (var entity in message.EntityValues)
                         {
-                            if(entity.Contains($"/rarity"))
+                            if (entity.Contains($"/rarity"))
                             {
                                 var value = message.Text.Replace(entity, string.Empty);
                                 var validString = Utils.ReturnValidRarityFromCommand(value);
