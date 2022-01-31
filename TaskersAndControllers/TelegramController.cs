@@ -40,7 +40,7 @@ namespace MagicNewCardsBot
         async private Task SendCardToChatsAsync(Card card, IAsyncEnumerable<Chat> chats)
         {
             int sendingChats = 0;
-            //goes trough all the chats and send a message for each one
+            //go through all the chats and send a message for each one
             await foreach (Chat chat in chats)
             {
                 Utils.LogInformation($"Sending {card} to {chat.Id}");
@@ -116,7 +116,7 @@ namespace MagicNewCardsBot
         {
             try
             {
-                //if there is a additional image, we must send a album
+                //if there is an additional image, we must send an album
                 if (card.ExtraSides != null && card.ExtraSides.Count > 0)
                 {
                     List<InputMediaPhoto> lstPhotos = new();
@@ -205,7 +205,7 @@ namespace MagicNewCardsBot
 
                 if (updates.Length > 0)
                 {
-                    //check if the chatID is in the list, if it isn't, adds it
+                    //check if the chatID is in the list, if it isn't, add it
                     foreach (Update update in updates)
                     {
                         if (update != null)
@@ -252,9 +252,9 @@ namespace MagicNewCardsBot
             bool isInDb = await Database.ChatExistsAsync(chat);
             if (isInDb == false)
             {
-                //if it isn't adds it
+                //if it's not, add it
                 await Database.InsertChatAsync(chat);
-                await _botClient.SendTextMessageAsync(chat, "Bot initialized sucessfully, new cards will be sent when avaliable");
+                await _botClient.SendTextMessageAsync(chat, "Bot has been initialized successfully, new cards will be sent when available");
                 Utils.LogInformation(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
             }
         }
@@ -283,7 +283,7 @@ namespace MagicNewCardsBot
                                 if (!string.IsNullOrWhiteSpace(validString))
                                 {
                                     await Database.UpdateWantedRaritiesForChatAsync(message.Chat, validString);
-                                    await _botClient.SendTextMessageAsync(message.Chat, "Updated rarities that will be recieved to: " + validString, cancellationToken: cancellationToken);
+                                    await _botClient.SendTextMessageAsync(message.Chat, "Updated rarities that will be received to: " + validString, cancellationToken: cancellationToken);
                                 }
                             }
                         }
