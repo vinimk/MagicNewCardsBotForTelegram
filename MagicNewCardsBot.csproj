@@ -29,10 +29,10 @@
     <PackageReference Include="CodeHollow.FeedReader" Version="1.2.4" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.42" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
-    <PackageReference Include="MySqlConnector" Version="2.1.8" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.1" />
+    <PackageReference Include="MySqlConnector" Version="2.1.9" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.1" />
     <PackageReference Include="Telegram.Bot" Version="18.0.0-alpha.1" />
     <PackageReference Include="Telegram.Bot.Extensions.Polling" Version="2.0.0-alpha.1" />
     <PackageReference Include="TweetinviAPI" Version="5.0.4" />
