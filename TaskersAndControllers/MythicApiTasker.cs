@@ -1,10 +1,7 @@
 using HtmlAgilityPack;
 using MagicNewCardsBot.Helpers;
 using MagicNewCardsBot.StorageClasses;
-using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace MagicNewCardsBot.TaskersAndControllers
 {
@@ -24,7 +21,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
             return url;
         }
 
-        protected bool IsSameCard(string url1, string url2)
+        protected static bool IsSameCard(string url1, string url2)
         {
             var endingUrl1 = url1[(url1.LastIndexOf('/') + 1)..];
             string endingUrl2 = url2[(url2.LastIndexOf('/') + 1)..];
@@ -38,7 +35,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
             //loads the website
 
             HtmlDocument doc = await GetHtmlDocumentFromUrlAsync(_websiteUrl + _page);
-            List<string> lstAlreadyReturnedCards = new List<string>();
+            List<string> lstAlreadyReturnedCards = new();
             //all the cards are a a href so we get all of that
             HtmlNodeCollection nodesGridCards = doc.DocumentNode.SelectNodes("//div[contains(@class, 'grid-card')]");
             if (nodesGridCards != null)
@@ -75,7 +72,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                             var nodeAHrefCredits = nodeCenterCredits?.ParentNode;
                             card.CreditsUrl = nodeAHrefCredits?.Attributes["href"].Value.Trim();
                             var nodeTextCredits = nodeCenterCredits?.SelectSingleNode(".//font");
-                            card.Credits = nodeTextCredits.InnerText.ToString().Trim();
+                            card.Credits = nodeTextCredits?.InnerText.ToString().Trim();
                         }
                         catch { }
 
@@ -231,7 +228,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                         {
                             var powerToughness = node.InnerText.Trim();
                             powerToughness = powerToughness.Replace("\n", string.Empty);
-                            if (powerToughness.Contains("/"))
+                            if (powerToughness.Contains('/'))
                             {
                                 string[] arrPt = powerToughness.Split('/');
                                 if (arrPt.Length == 2)
@@ -241,8 +238,8 @@ namespace MagicNewCardsBot.TaskersAndControllers
                                     break;
                                 }
                             }
-                            if (powerToughness.Contains("[") &&
-                                powerToughness.Contains("]")) //it is a Planeswalker and it is loyalty
+                            if (powerToughness.Contains('[') &&
+                                powerToughness.Contains(']')) //it is a Planeswalker and it is loyalty
                             {
                                 powerToughness = powerToughness.Replace("[", string.Empty).Replace("]", string.Empty);
                                 if (int.TryParse(powerToughness, out int loyalty))

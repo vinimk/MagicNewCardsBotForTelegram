@@ -1,9 +1,5 @@
 using MagicNewCardsBot.Helpers;
 using MagicNewCardsBot.StorageClasses;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -277,7 +273,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                     {
                         foreach (var entity in message.EntityValues)
                         {
-                            if (entity.Contains($"/rarity"))
+                            if (entity.Contains($"/rarity") && message.Text != null)
                             {
                                 var value = message.Text.Replace(entity, string.Empty);
                                 var validString = Utils.ReturnValidRarityFromCommand(value);

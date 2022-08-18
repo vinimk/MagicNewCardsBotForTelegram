@@ -1,10 +1,7 @@
 using MagicNewCardsBot.StorageClasses;
 using MySqlConnector;
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Threading.Tasks;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 

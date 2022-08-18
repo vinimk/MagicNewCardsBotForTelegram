@@ -1,14 +1,9 @@
 using HtmlAgilityPack;
 using MagicNewCardsBot.Helpers;
 using MagicNewCardsBot.StorageClasses;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace MagicNewCardsBot.TaskersAndControllers
 {
@@ -165,7 +160,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                             {
                                 var text = childNodes.InnerText.Trim();
                                 text = text.Replace("\n", string.Empty);
-                                if (text.Contains("/"))
+                                if (text.Contains('/'))
                                 {
                                     string[] arrPt = text.Split('/');
                                     if (arrPt.Length == 2)
@@ -185,26 +180,29 @@ namespace MagicNewCardsBot.TaskersAndControllers
                         case CardFields.Rarity:
                             string rarityValue = node.Attributes?["src"].Value;
                             Rarity? rarity = null;
-                            rarityValue = rarityValue.Replace("graph/rarity/", string.Empty).Trim();
-                            switch (rarityValue)
+                            if (rarityValue != null)
                             {
-                                case "carte30.png":
-                                    rarity = Rarity.Common;
-                                    break;
-                                case "carte20.png":
-                                    rarity = Rarity.Uncommon;
-                                    break;
-                                case "carte10.png":
-                                    rarity = Rarity.Rare;
-                                    break;
-                                case "carte4.png":
-                                    rarity = Rarity.Mythic;
-                                    break;
-                            }
+                                rarityValue = rarityValue.Replace("graph/rarity/", string.Empty).Trim();
+                                switch (rarityValue)
+                                {
+                                    case "carte30.png":
+                                        rarity = Rarity.Common;
+                                        break;
+                                    case "carte20.png":
+                                        rarity = Rarity.Uncommon;
+                                        break;
+                                    case "carte10.png":
+                                        rarity = Rarity.Rare;
+                                        break;
+                                    case "carte4.png":
+                                        rarity = Rarity.Mythic;
+                                        break;
+                                }
 
-                            if (rarity.HasValue)
-                            {
-                                card.Rarity = rarity;
+                                if (rarity.HasValue)
+                                {
+                                    card.Rarity = rarity;
+                                }
                             }
 
                             break;

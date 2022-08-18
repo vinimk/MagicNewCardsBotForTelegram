@@ -1,5 +1,4 @@
 ﻿using HtmlAgilityPack;
-using System.IO;
 
 namespace MagicNewCardsBot.Helpers
 {

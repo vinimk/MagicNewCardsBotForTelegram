@@ -1,11 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace MagicNewCardsBot.Helpers
+﻿namespace MagicNewCardsBot.Helpers
 {
     public static class Utils
     {
@@ -43,20 +36,23 @@ namespace MagicNewCardsBot.Helpers
             }
         }
 
+
         public static void LogInformation(string message)
         {
-            logger.LogInformation(string.Format("{0}-{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), message));
+            string log = $"{DateTime.Now:yyyy/MM/dd HH:mm:ss} - {message}";
+            logger.LogInformation(log);
         }
         public static void LogError(string message)
         {
-            logger.LogError(string.Format("{0}-{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), message));
+            string log = $"{DateTime.Now:yyyy/MM/dd HH:mm:ss} - {message}";
+            logger.LogInformation(message: log);
         }
 
         public static string ReturnValidRarityFromCommand(string rarity)
         {
             List<string> validRarity = new();
             rarity = rarity.Trim();
-            if (rarity.Contains(","))
+            if (rarity.Contains(','))
             {
                 foreach (string partialRarity in rarity.Split(","))
                 {

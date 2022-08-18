@@ -1,11 +1,6 @@
 using MagicNewCardsBot.Helpers;
 using MagicNewCardsBot.StorageClasses;
 using MagicNewCardsBot.TaskersAndControllers;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace MagicNewCardsBot
 {
@@ -93,7 +88,7 @@ namespace MagicNewCardsBot
                     await Database.UpdateIsSentAsync(card, true);
 
 
-                if (card.SendTo == SendTo.Both || 
+                if (card.SendTo == SendTo.Both ||
                     card.SendTo == SendTo.OnlyAll)
                 {
                     try
@@ -129,8 +124,8 @@ namespace MagicNewCardsBot
                     }
                 }
 
-                if(card.SendTo == SendTo.Both ||
-                   card.SendTo == SendTo.OnlyRarity )
+                if (card.SendTo == SendTo.Both ||
+                   card.SendTo == SendTo.OnlyRarity)
                 {
                     try
                     {

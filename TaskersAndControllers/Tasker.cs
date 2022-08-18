@@ -1,10 +1,7 @@
 ﻿using HtmlAgilityPack;
 using MagicNewCardsBot.Helpers;
 using MagicNewCardsBot.StorageClasses;
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using static MagicNewCardsBot.Helpers.Database;
 
 namespace MagicNewCardsBot.TaskersAndControllers

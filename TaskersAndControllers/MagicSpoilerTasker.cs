@@ -2,10 +2,7 @@ using CodeHollow.FeedReader;
 using HtmlAgilityPack;
 using MagicNewCardsBot.Helpers;
 using MagicNewCardsBot.StorageClasses;
-using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace MagicNewCardsBot.TaskersAndControllers
 {
@@ -26,7 +23,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
             return url;
         }
 
-        protected bool IsSameCard(string url1, string url2)
+        protected static bool IsSameCard(string url1, string url2)
         {
             var endingUrl1 = url1[(url1.LastIndexOf('/') + 1)..];
             string endingUrl2 = url2[(url2.LastIndexOf('/') + 1)..];

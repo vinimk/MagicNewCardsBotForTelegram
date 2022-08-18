@@ -1,8 +1,5 @@
 using MagicNewCardsBot.Helpers;
 using MagicNewCardsBot.StorageClasses;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Logic.QueryParameters;
 using Tweetinvi.Models;

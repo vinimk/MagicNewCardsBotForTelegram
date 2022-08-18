@@ -1,4 +1,3 @@
-using System;
 namespace MagicNewCardsBot.StorageClasses
 {
     public class Set
