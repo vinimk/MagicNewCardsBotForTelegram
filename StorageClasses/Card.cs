@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.StorageClasses
 {
 
     public class Card
@@ -19,7 +19,7 @@ namespace MagicNewCardsBot
                 if (!string.IsNullOrEmpty(name))
                     return name;
                 else
-                    return String.Empty;
+                    return string.Empty;
             }
             set
             {
@@ -28,42 +28,42 @@ namespace MagicNewCardsBot
         }
 
         [JsonProperty("type_line")]
-        public String Type
+        public string Type
         {
             get;
             set;
         }
 
         [JsonProperty("oracle_text")]
-        public String Text
+        public string Text
         {
             get;
             set;
         }
 
         [JsonProperty("mana_cost")]
-        public String ManaCost
+        public string ManaCost
         {
             get;
             set;
         }
 
         [JsonProperty("power")]
-        public String Power
+        public string Power
         {
             get;
             set;
         }
 
         [JsonProperty("toughness")]
-        public String Toughness
+        public string Toughness
         {
             get;
             set;
         }
 
         [JsonProperty("flavor_text")]
-        public String Flavor
+        public string Flavor
         {
             get;
             set;
@@ -85,22 +85,22 @@ namespace MagicNewCardsBot
             get;
             set;
         }
-        public String ImageUrl
+        public string ImageUrl
         {
             get;
             set;
         }
-        public String FullUrlWebSite
+        public string FullUrlWebSite
         {
             get;
             set;
         }
-        public String FullInfo
+        public string FullInfo
         {
             get;
             set;
         }
-        public String Set
+        public string Set
         {
             get;
             set;
@@ -124,7 +124,7 @@ namespace MagicNewCardsBot
         //we blacklist some URLs for credits that are from wizards or something like that
         public bool UseCredits()
         {
-            if (String.IsNullOrWhiteSpace(Credits) && String.IsNullOrWhiteSpace(CreditsUrl))
+            if (string.IsNullOrWhiteSpace(Credits) && string.IsNullOrWhiteSpace(CreditsUrl))
                 return false;
             if (CreditsUrl.Contains("card-image-gallery"))
                 return false;
@@ -141,30 +141,30 @@ namespace MagicNewCardsBot
             SendTo = SendTo.Both;
         }
 
-        public String GetFullText()
+        public string GetFullText()
         {
-            String lineBreak = " ";
+            string lineBreak = " ";
             StringBuilder sb = new();
 
-            if (!String.IsNullOrEmpty(Name))
+            if (!string.IsNullOrEmpty(Name))
             {
                 sb.Append(Name);
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(ManaCost))
+            if (!string.IsNullOrEmpty(ManaCost))
             {
                 sb.AppendFormat("|{0}|", ManaCost);
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Type))
+            if (!string.IsNullOrEmpty(Type))
             {
                 sb.AppendFormat("{0}.", Type);
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Text))
+            if (!string.IsNullOrEmpty(Text))
             {
                 sb.Append(Text);
                 if (!sb.ToString().EndsWith("."))
@@ -174,7 +174,7 @@ namespace MagicNewCardsBot
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
+            if (!string.IsNullOrEmpty(Power) || !string.IsNullOrEmpty(Toughness))
             {
                 sb.AppendFormat(" ({0}/{1})", Power, Toughness);
                 sb.Append(lineBreak);
@@ -199,17 +199,17 @@ namespace MagicNewCardsBot
             return text.Replace(URL_REPLACE_TEXT, CreditsUrl);
         }
 
-        public String GetTelegramTextFormatted()
+        public string GetTelegramTextFormatted()
         {
-            String lineBreak = Environment.NewLine;
+            string lineBreak = Environment.NewLine;
             StringBuilder sb = new();
 
-            if (!String.IsNullOrEmpty(Name))
+            if (!string.IsNullOrEmpty(Name))
             {
                 sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(Name));
             }
 
-            if (!String.IsNullOrEmpty(ManaCost))
+            if (!string.IsNullOrEmpty(ManaCost))
             {
                 sb.AppendFormat(" - {0}", WebUtility.HtmlEncode(ManaCost));
                 sb.Append(lineBreak);
@@ -219,13 +219,13 @@ namespace MagicNewCardsBot
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Type))
+            if (!string.IsNullOrEmpty(Type))
             {
                 sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Type));
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Text))
+            if (!string.IsNullOrEmpty(Text))
             {
                 sb.Append(WebUtility.HtmlEncode(Text));
                 if (!sb.ToString().EndsWith("."))
@@ -237,19 +237,19 @@ namespace MagicNewCardsBot
 
 
 
-            if (!String.IsNullOrEmpty(Power) || (!String.IsNullOrEmpty(Toughness)))
+            if (!string.IsNullOrEmpty(Power) || !string.IsNullOrEmpty(Toughness))
             {
-                sb.Append(String.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
+                sb.Append(string.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
                 sb.Append(lineBreak);
             }
 
             if (Loyalty.HasValue)
             {
-                sb.Append(String.Format("<b>Loyalty:</b> {0}", Loyalty.Value));
+                sb.Append(string.Format("<b>Loyalty:</b> {0}", Loyalty.Value));
                 sb.Append(lineBreak);
             }
 
-            if (!String.IsNullOrEmpty(Flavor))
+            if (!string.IsNullOrEmpty(Flavor))
             {
                 sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Flavor));
                 sb.Append(lineBreak);
@@ -266,7 +266,7 @@ namespace MagicNewCardsBot
             return sb.ToString();
         }
 
-        public String GetTwitterText()
+        public string GetTwitterText()
         {
             string text = GetFullText() + " #MTG ";
             if (text.Length < 240)
@@ -275,9 +275,9 @@ namespace MagicNewCardsBot
             }
             else
             {
-                String lineBreak = Environment.NewLine;
+                string lineBreak = Environment.NewLine;
                 StringBuilder sb = new();
-                if (!String.IsNullOrEmpty(Name))
+                if (!string.IsNullOrEmpty(Name))
                 {
                     sb.Append(Name);
                 }
@@ -303,14 +303,14 @@ namespace MagicNewCardsBot
         }
         public string GetRarityCharacter()
         {
-            if(Rarity.HasValue)
+            if (Rarity.HasValue)
             {
                 return Rarity switch
                 {
-                    MagicNewCardsBot.Rarity.Common => "C",
-                    MagicNewCardsBot.Rarity.Uncommon => "U",
-                    MagicNewCardsBot.Rarity.Rare => "R",
-                    MagicNewCardsBot.Rarity.Mythic => "M",
+                    StorageClasses.Rarity.Common => "C",
+                    StorageClasses.Rarity.Uncommon => "U",
+                    StorageClasses.Rarity.Rare => "R",
+                    StorageClasses.Rarity.Mythic => "M",
                     _ => string.Empty,
                 };
             }
@@ -319,7 +319,7 @@ namespace MagicNewCardsBot
 
         public override string ToString()
         {
-            if (!String.IsNullOrWhiteSpace(Name))
+            if (!string.IsNullOrWhiteSpace(Name))
             {
                 return $"{Name}";
             }
@@ -331,11 +331,11 @@ namespace MagicNewCardsBot
 
         public void AddExtraSide(Card card)
         {
-            if (this.ExtraSides == null)
-                this.ExtraSides = new List<Card>();
-            if (!this.ExtraSides.Exists(x => x.ImageUrl.Equals(card.ImageUrl)))
+            if (ExtraSides == null)
+                ExtraSides = new List<Card>();
+            if (!ExtraSides.Exists(x => x.ImageUrl.Equals(card.ImageUrl)))
             {
-                this.ExtraSides.Add(card);
+                ExtraSides.Add(card);
             }
         }
 

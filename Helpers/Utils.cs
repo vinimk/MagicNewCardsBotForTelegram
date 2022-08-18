@@ -5,7 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.Helpers
 {
     public static class Utils
     {
@@ -17,7 +17,7 @@ namespace MagicNewCardsBot
             return await client.GetStreamAsync(url);
         }
 
-        async public static Task<byte[]> GetByteArrayFromUrlAsync(String url)
+        async public static Task<byte[]> GetByteArrayFromUrlAsync(string url)
         {
             using HttpClient client = new();
             return await client.GetByteArrayAsync(url);
@@ -43,25 +43,25 @@ namespace MagicNewCardsBot
             }
         }
 
-        public static void LogInformation(String message)
+        public static void LogInformation(string message)
         {
-            logger.LogInformation(String.Format("{0}-{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), message));
+            logger.LogInformation(string.Format("{0}-{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), message));
         }
-        public static void LogError(String message)
+        public static void LogError(string message)
         {
-            logger.LogError(String.Format("{0}-{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), message));
+            logger.LogError(string.Format("{0}-{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), message));
         }
 
         public static string ReturnValidRarityFromCommand(string rarity)
         {
             List<string> validRarity = new();
             rarity = rarity.Trim();
-            if(rarity.Contains(","))
+            if (rarity.Contains(","))
             {
-                foreach(string partialRarity in rarity.Split(","))
+                foreach (string partialRarity in rarity.Split(","))
                 {
                     var temp = partialRarity.Trim();
-                    if(IsValidRarity(temp))
+                    if (IsValidRarity(temp))
                     {
                         validRarity.Add(temp.ToUpper());
                     }
@@ -69,7 +69,7 @@ namespace MagicNewCardsBot
             }
             else
             {
-                if(IsValidRarity(rarity))
+                if (IsValidRarity(rarity))
                 {
                     validRarity.Add(rarity.ToUpper());
                 }

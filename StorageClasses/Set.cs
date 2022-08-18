@@ -1,9 +1,9 @@
 using System;
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.StorageClasses
 {
     public class Set
     {
-        public Int64 ID { get; set; }
+        public long ID { get; set; }
         public string URL { get; set; }
         public string Name { get; set; }
 

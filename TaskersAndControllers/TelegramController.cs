@@ -1,3 +1,5 @@
+using MagicNewCardsBot.Helpers;
+using MagicNewCardsBot.StorageClasses;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -6,24 +8,24 @@ using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.TaskersAndControllers
 {
 
     public class TelegramController
     {
         #region Definitions
         private readonly string _telegramBotApiKey;
-        private readonly Telegram.Bot.TelegramBotClient _botClient;
+        private readonly TelegramBotClient _botClient;
         private readonly int MAX_CONCURRENT_MESSAGES = 50;
         private int _offset;
         private readonly long? _idUserDebug;
         #endregion
 
         #region Constructors
-        public TelegramController(String apiKey, long? IdUserDebug = null)
+        public TelegramController(string apiKey, long? IdUserDebug = null)
         {
             _telegramBotApiKey = apiKey;
-            _botClient = new Telegram.Bot.TelegramBotClient(_telegramBotApiKey);
+            _botClient = new TelegramBotClient(_telegramBotApiKey);
             _offset = 0;
             _idUserDebug = IdUserDebug;
         }
@@ -95,9 +97,9 @@ namespace MagicNewCardsBot
 
         private static string GetMessageText(Card card)
         {
-            String messageText;
+            string messageText;
             //if the text is to big, we need to send it as a message afterwards
-            Boolean isTextToBig = card.GetFullText().Length >= 1024;
+            bool isTextToBig = card.GetFullText().Length >= 1024;
 
             if (isTextToBig)
             {
@@ -140,31 +142,31 @@ namespace MagicNewCardsBot
             {
                 if (ex.Message.Contains("bot was kicked"))
                 {
-                    Utils.LogInformation(String.Format("Bot was kicked from group {0}, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(string.Format("Bot was kicked from group {0}, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChatAsync(chat);
                     return;
                 }
                 else if (ex.Message.Contains("bot was blocked by the user"))
                 {
-                    Utils.LogInformation(String.Format("Bot was blocked by user {0}, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(string.Format("Bot was blocked by user {0}, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChatAsync(chat);
                     return;
                 }
                 else if (ex.Message.Contains("user is deactivated"))
                 {
-                    Utils.LogInformation(String.Format("User {0} deactivated, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(string.Format("User {0} deactivated, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChatAsync(chat);
                     return;
                 }
                 else if (ex.Message.Contains("chat not found"))
                 {
-                    Utils.LogInformation(String.Format("Chat {0} not found, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(string.Format("Chat {0} not found, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChatAsync(chat);
                     return;
                 }
                 else if (ex.Message.Contains("have no rights to send a message"))
                 {
-                    Utils.LogInformation(String.Format("Chat {0} not found, deleting him from chat table", chat.Id));
+                    Utils.LogInformation(string.Format("Chat {0} not found, deleting him from chat table", chat.Id));
                     await Database.DeleteFromChatAsync(chat);
                     return;
                 }
@@ -174,11 +176,11 @@ namespace MagicNewCardsBot
                     {
                         await Database.InsertLogAsync($"Telegram send message: {card.FullUrlWebSite} image: {card.ImageUrl}, user: {chat.FirstName} group: {chat.Title}", card.Name, ex.ToString());
                         Utils.LogInformation(ex.Message);
-                        if (!String.IsNullOrEmpty(chat.FirstName))
+                        if (!string.IsNullOrEmpty(chat.FirstName))
                         {
                             Utils.LogInformation("Name: " + chat.FirstName);
                         }
-                        if (!String.IsNullOrEmpty(chat.Title))
+                        if (!string.IsNullOrEmpty(chat.Title))
                         {
                             Utils.LogInformation("Title: " + chat.Title);
                         }
@@ -254,7 +256,7 @@ namespace MagicNewCardsBot
                 //if it's not, add it
                 await Database.InsertChatAsync(chat);
                 await _botClient.SendTextMessageAsync(chat, "Bot has been initialized successfully, new cards will be sent when available");
-                Utils.LogInformation(String.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
+                Utils.LogInformation(string.Format("Chat {0} - {1}{2} added", chat.Id, chat.Title, chat.FirstName));
             }
         }
         #endregion
@@ -267,7 +269,7 @@ namespace MagicNewCardsBot
             {
                 try
                 {
-                    Utils.LogInformation(String.Format("Handling event ID:{0} from user {1}{2}", message.MessageId, message.Chat.FirstName, message.Chat.Title));
+                    Utils.LogInformation(string.Format("Handling event ID:{0} from user {1}{2}", message.MessageId, message.Chat.FirstName, message.Chat.Title));
                     await InsertInDbIfNotYetAddedAsync(message.Chat);
 
                     //commands handling
@@ -302,7 +304,7 @@ namespace MagicNewCardsBot
             {
                 Utils.LogError(apiRequestException.Message);
                 Utils.LogError(apiRequestException.StackTrace);
-                await Database.InsertLogAsync("HandleErrorAsync", String.Empty, exception.ToString());
+                await Database.InsertLogAsync("HandleErrorAsync", string.Empty, exception.ToString());
             }
         }
 

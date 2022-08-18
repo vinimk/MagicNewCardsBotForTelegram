@@ -1,10 +1,12 @@
 using HtmlAgilityPack;
+using MagicNewCardsBot.Helpers;
+using MagicNewCardsBot.StorageClasses;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.TaskersAndControllers
 {
     public class MythicApiTask : Tasker
     {
@@ -36,7 +38,7 @@ namespace MagicNewCardsBot
             //loads the website
 
             HtmlDocument doc = await GetHtmlDocumentFromUrlAsync(_websiteUrl + _page);
-            List<String> lstAlreadyReturnedCards = new List<string>();
+            List<string> lstAlreadyReturnedCards = new List<string>();
             //all the cards are a a href so we get all of that
             HtmlNodeCollection nodesGridCards = doc.DocumentNode.SelectNodes("//div[contains(@class, 'grid-card')]");
             if (nodesGridCards != null)
@@ -105,7 +107,7 @@ namespace MagicNewCardsBot
                     {
                         string alternativeSideImageUrl = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'DFC beaxface')]").ParentNode.SelectSingleNode(".//img").Attributes["src"].Value.Trim();
                         alternativeSideImageUrl = ValidateAndFixUrl(alternativeSideImageUrl);
-                        alternativeSideImageUrl = alternativeSideImageUrl.Replace("../", String.Empty);
+                        alternativeSideImageUrl = alternativeSideImageUrl.Replace("../", string.Empty);
                         if (!IsSameCard(alternativeSideImageUrl, card.ImageUrl))
                         {
                             if (await Utils.IsValidUrl(alternativeSideImageUrl))
@@ -198,9 +200,9 @@ namespace MagicNewCardsBot
                         var nodes = html.DocumentNode.SelectNodes("//comment()[contains(., 'CARD TEXT')]")[16].ParentNode.ChildNodes;
                         foreach (var node in nodes)
                         {
-                            String txt = node.InnerText;
+                            string txt = node.InnerText;
                             txt = txt.Replace("\n\n", "\n");
-                            txt = txt.Replace(@"<!--CARD TEXT-->", String.Empty);
+                            txt = txt.Replace(@"<!--CARD TEXT-->", string.Empty);
                             sb.Append(txt);
                         }
                         //this code is a mess, but it works
@@ -228,10 +230,10 @@ namespace MagicNewCardsBot
                         foreach (var node in nodes)
                         {
                             var powerToughness = node.InnerText.Trim();
-                            powerToughness = powerToughness.Replace("\n", String.Empty);
+                            powerToughness = powerToughness.Replace("\n", string.Empty);
                             if (powerToughness.Contains("/"))
                             {
-                                String[] arrPt = powerToughness.Split('/');
+                                string[] arrPt = powerToughness.Split('/');
                                 if (arrPt.Length == 2)
                                 {
                                     card.Power = arrPt[0];

@@ -1,3 +1,5 @@
+using MagicNewCardsBot.Helpers;
+using MagicNewCardsBot.StorageClasses;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -6,7 +8,7 @@ using Tweetinvi.Logic.QueryParameters;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.TaskersAndControllers
 {
 
     public class TwitterController
@@ -20,7 +22,7 @@ namespace MagicNewCardsBot
         #endregion
 
         #region Constructor
-        public TwitterController(String consumerKey, string consumerSecret, String acessToken, String acessTokenSecret)
+        public TwitterController(string consumerKey, string consumerSecret, string acessToken, string acessTokenSecret)
         {
             _consumerKey = consumerKey;
             _consumerSecret = consumerSecret;

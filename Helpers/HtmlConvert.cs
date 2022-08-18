@@ -1,7 +1,7 @@
 ﻿using HtmlAgilityPack;
 using System.IO;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.Helpers
 {
     public static class HtmlToText
     {
@@ -45,7 +45,7 @@ namespace MagicNewCardsBot
                 case HtmlNodeType.Text:
                     // script and style must not be output
                     string parentName = node.ParentNode.Name;
-                    if ((parentName == "script") || (parentName == "style"))
+                    if (parentName == "script" || parentName == "style")
                         break;
 
                     // get text

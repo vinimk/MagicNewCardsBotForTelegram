@@ -1,21 +1,21 @@
 using Newtonsoft.Json.Linq;
 using System;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.StorageClasses
 {
     public class ScryfallCard : Card
     {
-        public String id
+        public string id
         {
             get;
             set;
         }
-        public String scryfall_uri
+        public string scryfall_uri
         {
             get;
             set;
         }
-        public String layout
+        public string layout
         {
             get;
             set;

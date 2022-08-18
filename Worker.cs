@@ -1,3 +1,6 @@
+using MagicNewCardsBot.Helpers;
+using MagicNewCardsBot.StorageClasses;
+using MagicNewCardsBot.TaskersAndControllers;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;

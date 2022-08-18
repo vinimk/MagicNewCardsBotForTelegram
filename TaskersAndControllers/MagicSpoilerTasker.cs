@@ -1,11 +1,13 @@
 using CodeHollow.FeedReader;
 using HtmlAgilityPack;
+using MagicNewCardsBot.Helpers;
+using MagicNewCardsBot.StorageClasses;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.TaskersAndControllers
 {
     public class MagicSpoilerTasker : Tasker
     {
@@ -38,7 +40,7 @@ namespace MagicNewCardsBot
             //loads the website
 
 
-            var feed = await FeedReader.ReadAsync(this._websiteUrl + _page);
+            var feed = await FeedReader.ReadAsync(_websiteUrl + _page);
             //all the cards are a a href so we get all of that
 
             foreach (var item in feed.Items)
@@ -118,7 +120,7 @@ namespace MagicNewCardsBot
                                 card.Credits = node.FirstChild.InnerText.Replace("SRC:", string.Empty).Trim();
                                 continue;
                             }
-                            String txt = node.InnerText;
+                            string txt = node.InnerText;
                             txt = txt.Replace("\n\n", "\n");
                             sb.Append(txt);
                         }
@@ -129,7 +131,7 @@ namespace MagicNewCardsBot
                         txt2 = txt2.Replace("\n\n", "\n");
                         txt2 = txt2.Replace("\n\n", "\n");
                         txt2 = txt2.Trim();
-                        if (!String.IsNullOrWhiteSpace(txt2))
+                        if (!string.IsNullOrWhiteSpace(txt2))
                         {
                             card.Text = System.Net.WebUtility.HtmlDecode(txt2);
                         }

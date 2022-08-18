@@ -1,3 +1,4 @@
+using MagicNewCardsBot.StorageClasses;
 using MySqlConnector;
 using System;
 using System.Collections.Generic;
@@ -7,13 +8,13 @@ using System.Threading.Tasks;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.Helpers
 {
     public class Database
     {
-        private static String _connectionString;
+        private static string _connectionString;
 
-        public static readonly Int32 MAX_CARDS = 200;
+        public static readonly int MAX_CARDS = 200;
 
         public enum CardStatus
         {
@@ -23,13 +24,13 @@ namespace MagicNewCardsBot
             NotSent = 3
         }
 
-        public static void SetConnectionString(String connectionString)
+        public static void SetConnectionString(string connectionString)
         {
             _connectionString = connectionString;
         }
 
         #region Update Methods
-        async public static Task UpdateIsSentAsync(Card card, Boolean isSent)
+        async public static Task UpdateIsSentAsync(Card card, bool isSent)
         {
             using MySqlConnection conn = new(_connectionString);
             if (conn.State != ConnectionState.Open)
@@ -64,7 +65,7 @@ namespace MagicNewCardsBot
             }
         }
 
-        async public static Task UpdateHasRarityAsync(Card card, Boolean hasRarity)
+        async public static Task UpdateHasRarityAsync(Card card, bool hasRarity)
         {
             using MySqlConnection conn = new(_connectionString);
             if (conn.State != ConnectionState.Open)
@@ -151,10 +152,10 @@ namespace MagicNewCardsBot
         #region Is In Methods
 
 
-        async public static Task<Boolean> IsExtraSideInDatabase(Card mainCard, Boolean isSent)
+        async public static Task<bool> IsExtraSideInDatabase(Card mainCard, bool isSent)
         {
             using MySqlConnection conn = new(_connectionString);
-            Int64 count = -1;
+            long count = -1;
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
@@ -197,7 +198,7 @@ namespace MagicNewCardsBot
                     using DbDataReader reader = await cmd.ExecuteReaderAsync();
                     while (await reader.ReadAsync())
                     {
-                        count = await reader.GetFieldValueAsync<Int64>(0);
+                        count = await reader.GetFieldValueAsync<long>(0);
                         if (count > 0)
                             return true;
                     }
@@ -259,7 +260,7 @@ namespace MagicNewCardsBot
                 conn.Close();
             }
 
-            if(isSent.HasValue && 
+            if (isSent.HasValue &&
                 isSent.Value == 0)
             {
                 return CardStatus.NotSent;
@@ -280,10 +281,10 @@ namespace MagicNewCardsBot
             return CardStatus.NotFound;
         }
 
-        async public static Task<Boolean> ChatExistsAsync(Chat chat)
+        async public static Task<bool> ChatExistsAsync(Chat chat)
         {
             using MySqlConnection conn = new(_connectionString);
-            Int64 count = -1;
+            long count = -1;
             if (conn.State != ConnectionState.Open)
             {
                 await conn.OpenAsync();
@@ -305,7 +306,7 @@ namespace MagicNewCardsBot
             {
                 while (await reader.ReadAsync())
                 {
-                    count = await reader.GetFieldValueAsync<Int64>(0);
+                    count = await reader.GetFieldValueAsync<long>(0);
                 }
             }
 
@@ -342,9 +343,9 @@ namespace MagicNewCardsBot
                 {
                     Set set = new()
                     {
-                        ID = await reader.GetFieldValueAsync<Int64>(0),
-                        URL = await reader.GetFieldValueAsync<String>(1),
-                        Name = await reader.GetFieldValueAsync<String>(2),
+                        ID = await reader.GetFieldValueAsync<long>(0),
+                        URL = await reader.GetFieldValueAsync<string>(1),
+                        Name = await reader.GetFieldValueAsync<string>(2),
                     };
                     retList.Add(set);
                 }
@@ -374,7 +375,7 @@ namespace MagicNewCardsBot
                                             WHERE IsBlocked = 0 
                                             ";
 
-                if (!String.IsNullOrWhiteSpace(wantedRarities))
+                if (!string.IsNullOrWhiteSpace(wantedRarities))
                 {
                     cmd.CommandText += "AND WantedRarities like @WantedRarities";
                     cmd.Parameters.Add(new MySqlParameter()
@@ -392,12 +393,12 @@ namespace MagicNewCardsBot
                 using DbDataReader reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    ChatType type = (ChatType)Enum.Parse(typeof(ChatType), await reader.GetFieldValueAsync<String>(3));
+                    ChatType type = (ChatType)Enum.Parse(typeof(ChatType), await reader.GetFieldValueAsync<string>(3));
                     Chat chat = new()
                     {
-                        Id = await reader.GetFieldValueAsync<Int64>(0),
-                        Title = await reader.GetFieldValueAsync<String>(1),
-                        FirstName = await reader.GetFieldValueAsync<String>(2),
+                        Id = await reader.GetFieldValueAsync<long>(0),
+                        Title = await reader.GetFieldValueAsync<string>(1),
+                        FirstName = await reader.GetFieldValueAsync<string>(2),
                         Type = type,
                     };
                     yield return chat;
@@ -443,7 +444,7 @@ namespace MagicNewCardsBot
                                                 @HasRarity
                                                 )";
 
-                String id;
+                string id;
                 if (card.GetType() == typeof(ScryfallCard))
                 {
                     id = ((ScryfallCard)card).id;
@@ -504,11 +505,11 @@ namespace MagicNewCardsBot
         /// <param name="spoilName">name of the spoil(if any)</param>
         /// <param name="message">message of the log</param>
         /// <returns>ID of the saved log</returns>
-        async public static Task<Int32> InsertLogAsync(String methodName, String spoilName, String message)
+        async public static Task<int> InsertLogAsync(string methodName, string spoilName, string message)
         {
             try
             {
-                Int32 result = -1;
+                int result = -1;
                 using MySqlConnection conn = new(_connectionString);
                 if (conn.State != ConnectionState.Open)
                 {
@@ -548,7 +549,7 @@ namespace MagicNewCardsBot
                     });
 
                     await cmd.ExecuteNonQueryAsync();
-                    result = (Int32)cmd.LastInsertedId;
+                    result = (int)cmd.LastInsertedId;
                 }
                 if (conn.State == ConnectionState.Open)
                 {
@@ -563,9 +564,9 @@ namespace MagicNewCardsBot
             }
         }
 
-        async public static Task<Int64> InsertChatAsync(Chat chat)
+        async public static Task<long> InsertChatAsync(Chat chat)
         {
-            Int64 ret = -1;
+            long ret = -1;
             using MySqlConnection conn = new(_connectionString);
             if (conn.State != ConnectionState.Open)
             {
@@ -613,7 +614,7 @@ namespace MagicNewCardsBot
                 });
 
                 await cmd.ExecuteNonQueryAsync();
-                ret = (Int64)cmd.LastInsertedId;
+                ret = cmd.LastInsertedId;
             }
             if (conn.State == ConnectionState.Open)
             {

@@ -1,11 +1,13 @@
 ﻿using HtmlAgilityPack;
+using MagicNewCardsBot.Helpers;
+using MagicNewCardsBot.StorageClasses;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using static MagicNewCardsBot.Database;
+using static MagicNewCardsBot.Helpers.Database;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.TaskersAndControllers
 {
     public abstract class Tasker
     {
@@ -17,18 +19,18 @@ namespace MagicNewCardsBot
             //get the aditional infos from the website
             await foreach (Card card in GetAvaliableCardsInWebSiteAsync())
             {
-                var cardInDb = await Database.GetCardStatus(card);
-                if (cardInDb != Database.CardStatus.Complete)
+                var cardInDb = await GetCardStatus(card);
+                if (cardInDb != CardStatus.Complete)
                 {
                     await GetAdditionalInfoAsync(card);
                     if (!string.IsNullOrEmpty(card.ImageUrl))
                     {
                         if (card.ExtraSides != null && card.ExtraSides.Count > 0)
                         {
-                            if (await Database.IsExtraSideInDatabase(card, true) == true)
+                            if (await IsExtraSideInDatabase(card, true) == true)
                             {
                                 bool flagContinue = false;
-                                await Database.InsertScryfallCardAsync(card, true, card.Rarity.HasValue);
+                                await InsertScryfallCardAsync(card, true, card.Rarity.HasValue);
                                 foreach (var extraSide in card.ExtraSides)
                                 {
                                     if (string.IsNullOrEmpty(extraSide.FullUrlWebSite))
@@ -36,7 +38,7 @@ namespace MagicNewCardsBot
                                         extraSide.FullUrlWebSite = card.FullUrlWebSite;
                                     }
 
-                                    var statusExtraSide = await Database.GetCardStatus(extraSide);
+                                    var statusExtraSide = await GetCardStatus(extraSide);
 
                                     switch (statusExtraSide)
                                     {
@@ -44,7 +46,7 @@ namespace MagicNewCardsBot
                                             flagContinue = true;
                                             continue;
                                         case CardStatus.NotFound:
-                                            await Database.InsertScryfallCardAsync(extraSide, true, extraSide.Rarity.HasValue);
+                                            await InsertScryfallCardAsync(extraSide, true, extraSide.Rarity.HasValue);
                                             break;
                                         case CardStatus.WithoutRarity:
                                             //do nothing
@@ -60,9 +62,9 @@ namespace MagicNewCardsBot
                         }
 
                         //adds in the database
-                        if (cardInDb == Database.CardStatus.NotFound)
+                        if (cardInDb == CardStatus.NotFound)
                         {
-                            await Database.InsertScryfallCardAsync(card, false, card.Rarity.HasValue);
+                            await InsertScryfallCardAsync(card, false, card.Rarity.HasValue);
                             if (card.Rarity.HasValue)
                             {
                                 card.SendTo = SendTo.Both;
@@ -72,9 +74,9 @@ namespace MagicNewCardsBot
                                 card.SendTo = SendTo.OnlyAll;
                             }
                         }
-                        else if (cardInDb == Database.CardStatus.WithoutRarity && card.Rarity.HasValue)
+                        else if (cardInDb == CardStatus.WithoutRarity && card.Rarity.HasValue)
                         {
-                            await Database.UpdateHasRarityAsync(card, true);
+                            await UpdateHasRarityAsync(card, true);
                             card.SendTo = SendTo.OnlyRarity;
                         }
                         else

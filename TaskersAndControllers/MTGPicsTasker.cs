@@ -1,5 +1,6 @@
 using HtmlAgilityPack;
 using MagicNewCardsBot.Helpers;
+using MagicNewCardsBot.StorageClasses;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot.TaskersAndControllers
 {
     public class MTGPicsTasker : Tasker
     {
@@ -99,7 +100,7 @@ namespace MagicNewCardsBot
                             break;
 
                         case CardFields.ManaCost:
-                            string totalCost = String.Empty;
+                            string totalCost = string.Empty;
                             foreach (var childNode in node.ChildNodes)
                             {
                                 string imgUrl = childNode.Attributes["src"].Value;
@@ -107,11 +108,11 @@ namespace MagicNewCardsBot
                                 {
                                     int lastIndex = imgUrl.LastIndexOf('/');
                                     string cost = imgUrl[(lastIndex + 1)..];
-                                    cost = cost.Replace(".png", String.Empty);
+                                    cost = cost.Replace(".png", string.Empty);
                                     totalCost += cost.Trim().ToUpper();
                                 }
                             }
-                            if (!String.IsNullOrEmpty(totalCost))
+                            if (!string.IsNullOrEmpty(totalCost))
                             {
                                 card.ManaCost = totalCost;
                             }
@@ -119,10 +120,10 @@ namespace MagicNewCardsBot
                         case CardFields.Type:
                             string type = node.InnerText;
                             type = type.Replace("\u0097", "-");
-                            type = System.Net.WebUtility.HtmlDecode(type);
+                            type = WebUtility.HtmlDecode(type);
                             type = type.Trim();
 
-                            if (!String.IsNullOrEmpty(type))
+                            if (!string.IsNullOrEmpty(type))
                                 card.Type = type;
 
                             break;
@@ -147,7 +148,7 @@ namespace MagicNewCardsBot
 
                                 string text = childNode.InnerText.Replace("\u0095", "•");
                                 text = text.Replace("\u0097", "-");
-                                text = text.Replace("\n\t\t\t", String.Empty);
+                                text = text.Replace("\n\t\t\t", string.Empty);
                                 text = text.Replace("  ", " ");
                                 text = WebUtility.HtmlDecode(text);
 
@@ -155,7 +156,7 @@ namespace MagicNewCardsBot
                             }
 
                             string sbString = sb.ToString();
-                            if (!String.IsNullOrEmpty(sbString))
+                            if (!string.IsNullOrEmpty(sbString))
                                 card.Text = sbString;
 
                             break;
@@ -163,10 +164,10 @@ namespace MagicNewCardsBot
                             foreach (var childNodes in node.ChildNodes)
                             {
                                 var text = childNodes.InnerText.Trim();
-                                text = text.Replace("\n", String.Empty);
+                                text = text.Replace("\n", string.Empty);
                                 if (text.Contains("/"))
                                 {
-                                    String[] arrPt = text.Split('/');
+                                    string[] arrPt = text.Split('/');
                                     if (arrPt.Length == 2)
                                     {
                                         card.Power = arrPt[0];
@@ -182,7 +183,7 @@ namespace MagicNewCardsBot
                             }
                             break;
                         case CardFields.Rarity:
-                            string rarityValue =  node.Attributes?["src"].Value;
+                            string rarityValue = node.Attributes?["src"].Value;
                             Rarity? rarity = null;
                             rarityValue = rarityValue.Replace("graph/rarity/", string.Empty).Trim();
                             switch (rarityValue)
@@ -201,7 +202,7 @@ namespace MagicNewCardsBot
                                     break;
                             }
 
-                            if(rarity.HasValue)
+                            if (rarity.HasValue)
                             {
                                 card.Rarity = rarity;
                             }
@@ -262,7 +263,7 @@ namespace MagicNewCardsBot
 
             //POWER AND TOUGHNESS AND LOYALTY
             var nodesPT = g16nodes.Where(x => x.Attributes["align"] != null &&
-                                            !String.IsNullOrEmpty(x.InnerText.Trim()) &&
+                                            !string.IsNullOrEmpty(x.InnerText.Trim()) &&
                                             x.Attributes["align"].Value.Trim().Equals("right")).ToList();
 
             if (nodesPT != null)
@@ -270,7 +271,7 @@ namespace MagicNewCardsBot
 
             var nodesRarity = html.DocumentNode.SelectNodes("//img[contains(@src,'graph/rarity/')]");
             if (nodesRarity != null)
-                ProcessFieldByType(nodesRarity,card, CardFields.Rarity);
+                ProcessFieldByType(nodesRarity, card, CardFields.Rarity);
 
         }
 
@@ -330,7 +331,7 @@ namespace MagicNewCardsBot
 
                                     var alernativeImage = GetImageUrlFromHtmlDoc(alternativeHtmlDoc);
 
-                                    if (!String.IsNullOrEmpty(alernativeImage))
+                                    if (!string.IsNullOrEmpty(alernativeImage))
                                     {
                                         Card alternativeCard = new() { FullUrlWebSite = hrefAlternative, ImageUrl = alernativeImage };
                                         GetExtraSides(alternativeCard, alternativeHtmlDoc);
