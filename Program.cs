@@ -16,7 +16,7 @@ namespace MagicNewCardsBot
 
                     var options = configuration.GetSection("Configs").Get<WorkerOptions>();
 
-                    _ = services.AddSingleton(options);
+                    _ = services.AddSingleton(options!);
 
                     _ = services.AddHostedService<Worker>();
                 });
