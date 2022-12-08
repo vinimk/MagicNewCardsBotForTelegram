@@ -32,7 +32,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
         #endregion
 
         #region Public Methods
-        async public Task TweetCardAsync(Card card)
+        public async Task TweetCardAsync(Card card)
         {
 
             List<IMedia> lstImages = new();
@@ -65,7 +65,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                 }
             }
 
-            await _twitterClient.Tweets.PublishTweetAsync(new PublishTweetParameters
+            _ = await _twitterClient.Tweets.PublishTweetAsync(new PublishTweetParameters
             {
                 Medias = lstImages,
                 Text = card.GetTwitterText()

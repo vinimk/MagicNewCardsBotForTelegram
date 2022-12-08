@@ -3,14 +3,14 @@
     public static class Utils
     {
         private static ILogger<Worker> logger;
-        async public static Task<Stream> GetStreamFromUrlAsync(string url)
+        public static async Task<Stream> GetStreamFromUrlAsync(string url)
         {
             //do a webrequest to get the image
             using HttpClient client = new();
             return await client.GetStreamAsync(url);
         }
 
-        async public static Task<byte[]> GetByteArrayFromUrlAsync(string url)
+        public static async Task<byte[]> GetByteArrayFromUrlAsync(string url)
         {
             using HttpClient client = new();
             return await client.GetByteArrayAsync(url);
@@ -26,14 +26,7 @@
             using HttpClient client = new();
             HttpResponseMessage response = await client.GetAsync(url);
 
-            if (response.IsSuccessStatusCode)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return response.IsSuccessStatusCode;
         }
 
 
@@ -56,7 +49,7 @@
             {
                 foreach (string partialRarity in rarity.Split(","))
                 {
-                    var temp = partialRarity.Trim();
+                    string temp = partialRarity.Trim();
                     if (IsValidRarity(temp))
                     {
                         validRarity.Add(temp.ToUpper());

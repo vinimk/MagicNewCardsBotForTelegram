@@ -7,18 +7,19 @@ namespace MagicNewCardsBot
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
                     IConfiguration configuration = hostContext.Configuration;
 
-                    WorkerOptions options = configuration.GetSection("Configs").Get<WorkerOptions>();
+                    var options = configuration.GetSection("Configs").Get<WorkerOptions>();
 
-                    services.AddSingleton(options);
+                    _ = services.AddSingleton(options);
 
-                    services.AddHostedService<Worker>();
+                    _ = services.AddHostedService<Worker>();
                 });
-
+        }
     }
 }

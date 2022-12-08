@@ -23,14 +23,14 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
         protected static bool IsSameCard(string url1, string url2)
         {
-            var endingUrl1 = url1[(url1.LastIndexOf('/') + 1)..];
+            string endingUrl1 = url1[(url1.LastIndexOf('/') + 1)..];
             string endingUrl2 = url2[(url2.LastIndexOf('/') + 1)..];
             return endingUrl1 == endingUrl2;
         }
 
         #region Overrided Methods
 
-        async override protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
+        protected override async IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
         {
             //loads the website
 
@@ -43,7 +43,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                 int crawlsFromThisSite = 0;
                 foreach (HtmlNode nodeGrid in nodesGridCards)
                 {
-                    var nodeImg = nodeGrid.SelectSingleNode(".//img");
+                    HtmlNode nodeImg = nodeGrid.SelectSingleNode(".//img");
                     if (nodeImg.Attributes.Contains("src") &&
                         nodeImg.Attributes["src"].Value.ToString().Contains("cards") &&
                         nodeImg.Attributes["src"].Value.ToString().Trim().EndsWith(".jpg"))
@@ -68,10 +68,10 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
                         try
                         {
-                            var nodeCenterCredits = nodeGrid?.SelectSingleNode(".//center");
-                            var nodeAHrefCredits = nodeCenterCredits?.ParentNode;
+                            HtmlNode nodeCenterCredits = nodeGrid?.SelectSingleNode(".//center");
+                            HtmlNode nodeAHrefCredits = nodeCenterCredits?.ParentNode;
                             card.CreditsUrl = nodeAHrefCredits?.Attributes["href"].Value.Trim();
-                            var nodeTextCredits = nodeCenterCredits?.SelectSingleNode(".//font");
+                            HtmlNode nodeTextCredits = nodeCenterCredits?.SelectSingleNode(".//font");
                             card.Credits = nodeTextCredits?.InnerText.ToString().Trim();
                         }
                         catch { }
@@ -84,13 +84,15 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
                     //only get the lastest
                     if (crawlsFromThisSite == Database.MAX_CARDS)
+                    {
                         break;
+                    }
                 }
             }
 
         }
 
-        async override protected Task GetAdditionalInfoAsync(Card card)
+        protected override async Task GetAdditionalInfoAsync(Card card)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
@@ -116,7 +118,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                     catch { }
                     try
                     {
-                        var nodeScript = html.DocumentNode.SelectSingleNode("//script[contains(text(),'/cards/')]");
+                        HtmlNode nodeScript = html.DocumentNode.SelectSingleNode("//script[contains(text(),'/cards/')]");
                         if (nodeScript != null)
                         {
                             foreach (string line in nodeScript.InnerHtml.Split("\n"))
@@ -183,27 +185,32 @@ namespace MagicNewCardsBot.TaskersAndControllers
                     { }
                     try
                     {
-                        var nodesType = html.DocumentNode.SelectNodes("//comment()[contains(., 'TYPE')]");
+                        HtmlNodeCollection nodesType = html.DocumentNode.SelectNodes("//comment()[contains(., 'TYPE')]");
                         if (nodesType.Count > 7)
+                        {
                             card.Type = html.DocumentNode.SelectNodes("//comment()[contains(., 'TYPE')]")[1].ParentNode.InnerText.Trim();
+                        }
+
                         if (card.Type.Length > 100)
+                        {
                             card.Type = null;
+                        }
                     }
                     catch
                     { }
                     try
                     {
                         StringBuilder sb = new();
-                        var nodes = html.DocumentNode.SelectNodes("//comment()[contains(., 'CARD TEXT')]")[16].ParentNode.ChildNodes;
-                        foreach (var node in nodes)
+                        HtmlNodeCollection nodes = html.DocumentNode.SelectNodes("//comment()[contains(., 'CARD TEXT')]")[16].ParentNode.ChildNodes;
+                        foreach (HtmlNode node in nodes)
                         {
                             string txt = node.InnerText;
                             txt = txt.Replace("\n\n", "\n");
                             txt = txt.Replace(@"<!--CARD TEXT-->", string.Empty);
-                            sb.Append(txt);
+                            _ = sb.Append(txt);
                         }
                         //this code is a mess, but it works
-                        var txt2 = sb.ToString();
+                        string txt2 = sb.ToString();
                         txt2 = txt2.Replace("\n\n", "\n");
                         txt2 = txt2.Replace("\n\n", "\n");
                         txt2 = txt2.Replace("\n\n", "\n");
@@ -222,11 +229,11 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
                     try
                     {
-                        var nodes = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'P/T')]").ParentNode.ChildNodes;
+                        HtmlNodeCollection nodes = html.DocumentNode.SelectSingleNode("//comment()[contains(., 'P/T')]").ParentNode.ChildNodes;
 
-                        foreach (var node in nodes)
+                        foreach (HtmlNode node in nodes)
                         {
-                            var powerToughness = node.InnerText.Trim();
+                            string powerToughness = node.InnerText.Trim();
                             powerToughness = powerToughness.Replace("\n", string.Empty);
                             if (powerToughness.Contains('/'))
                             {

@@ -11,12 +11,12 @@ namespace MagicNewCardsBot.TaskersAndControllers
         protected readonly string _websiteUrl;
         #region Public Methods
 
-        async public IAsyncEnumerable<Card> GetNewCardsAsync()
+        public async IAsyncEnumerable<Card> GetNewCardsAsync()
         {
             //get the aditional infos from the website
             await foreach (Card card in GetAvaliableCardsInWebSiteAsync())
             {
-                var cardInDb = await GetCardStatus(card);
+                CardStatus cardInDb = await GetCardStatus(card);
                 if (cardInDb != CardStatus.Complete)
                 {
                     await GetAdditionalInfoAsync(card);
@@ -28,14 +28,14 @@ namespace MagicNewCardsBot.TaskersAndControllers
                             {
                                 bool flagContinue = false;
                                 await InsertScryfallCardAsync(card, true, card.Rarity.HasValue);
-                                foreach (var extraSide in card.ExtraSides)
+                                foreach (Card extraSide in card.ExtraSides)
                                 {
                                     if (string.IsNullOrEmpty(extraSide.FullUrlWebSite))
                                     {
                                         extraSide.FullUrlWebSite = card.FullUrlWebSite;
                                     }
 
-                                    var statusExtraSide = await GetCardStatus(extraSide);
+                                    CardStatus statusExtraSide = await GetCardStatus(extraSide);
 
                                     switch (statusExtraSide)
                                     {
@@ -62,14 +62,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                         if (cardInDb == CardStatus.NotFound)
                         {
                             await InsertScryfallCardAsync(card, false, card.Rarity.HasValue);
-                            if (card.Rarity.HasValue)
-                            {
-                                card.SendTo = SendTo.Both;
-                            }
-                            else
-                            {
-                                card.SendTo = SendTo.OnlyAll;
-                            }
+                            card.SendTo = card.Rarity.HasValue ? SendTo.Both : SendTo.OnlyAll;
                         }
                         else if (cardInDb == CardStatus.WithoutRarity && card.Rarity.HasValue)
                         {
@@ -100,8 +93,8 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
 
         #region Abstract methods
-        abstract protected Task GetAdditionalInfoAsync(Card card);
-        abstract protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync();
+        protected abstract Task GetAdditionalInfoAsync(Card card);
+        protected abstract IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync();
         #endregion
     }
 }

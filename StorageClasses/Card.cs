@@ -12,17 +12,8 @@ namespace MagicNewCardsBot.StorageClasses
         [JsonProperty("name")]
         public string Name
         {
-            get
-            {
-                if (!string.IsNullOrEmpty(name))
-                    return name;
-                else
-                    return string.Empty;
-            }
-            set
-            {
-                name = value;
-            }
+            get => !string.IsNullOrEmpty(name) ? name : string.Empty;
+            set => name = value;
         }
 
         [JsonProperty("type_line")]
@@ -123,12 +114,11 @@ namespace MagicNewCardsBot.StorageClasses
         public bool UseCredits()
         {
             if (string.IsNullOrWhiteSpace(Credits) && string.IsNullOrWhiteSpace(CreditsUrl))
+            {
                 return false;
-            if (CreditsUrl.Contains("card-image-gallery"))
-                return false;
-            if (CreditsUrl.Contains("www.twitch.tv/magic"))
-                return false;
-            return true;
+            }
+
+            return !CreditsUrl.Contains("card-image-gallery") && !CreditsUrl.Contains("www.twitch.tv/magic");
         }
 
         #region Methods
@@ -146,54 +136,57 @@ namespace MagicNewCardsBot.StorageClasses
 
             if (!string.IsNullOrEmpty(Name))
             {
-                sb.Append(Name);
-                sb.Append(lineBreak);
+                _ = sb.Append(Name);
+                _ = sb.Append(lineBreak);
             }
 
             if (!string.IsNullOrEmpty(ManaCost))
             {
-                sb.AppendFormat("|{0}|", ManaCost);
-                sb.Append(lineBreak);
+                _ = sb.AppendFormat("|{0}|", ManaCost);
+                _ = sb.Append(lineBreak);
             }
 
             if (!string.IsNullOrEmpty(Type))
             {
-                sb.AppendFormat("{0}.", Type);
-                sb.Append(lineBreak);
+                _ = sb.AppendFormat("{0}.", Type);
+                _ = sb.Append(lineBreak);
             }
 
             if (!string.IsNullOrEmpty(Text))
             {
-                sb.Append(Text);
+                _ = sb.Append(Text);
                 if (!sb.ToString().EndsWith("."))
                 {
-                    sb.Append('.');
+                    _ = sb.Append('.');
                 }
-                sb.Append(lineBreak);
+                _ = sb.Append(lineBreak);
             }
 
             if (!string.IsNullOrEmpty(Power) || !string.IsNullOrEmpty(Toughness))
             {
-                sb.AppendFormat(" ({0}/{1})", Power, Toughness);
-                sb.Append(lineBreak);
+                _ = sb.AppendFormat(" ({0}/{1})", Power, Toughness);
+                _ = sb.Append(lineBreak);
             }
 
             if (UseCredits())
             {
-                sb.Append(URL_REPLACE_TEXT);
-                sb.Append(lineBreak);
+                _ = sb.Append(URL_REPLACE_TEXT);
+                _ = sb.Append(lineBreak);
             }
 
-            sb.Append(FullUrlWebSite);
+            _ = sb.Append(FullUrlWebSite);
 
             return sb.ToString();
         }
 
         public string GetTwitterAltText()
         {
-            var text = GetFullText();
+            string text = GetFullText();
             if (text.Length > 1000)
-                text = text.Substring(0, 999);
+            {
+                text = text[..999];
+            }
+
             return text.Replace(URL_REPLACE_TEXT, CreditsUrl);
         }
 
@@ -204,62 +197,62 @@ namespace MagicNewCardsBot.StorageClasses
 
             if (!string.IsNullOrEmpty(Name))
             {
-                sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(Name));
+                _ = sb.AppendFormat("<b>{0}</b>", WebUtility.HtmlEncode(Name));
             }
 
             if (!string.IsNullOrEmpty(ManaCost))
             {
-                sb.AppendFormat(" - {0}", WebUtility.HtmlEncode(ManaCost));
-                sb.Append(lineBreak);
+                _ = sb.AppendFormat(" - {0}", WebUtility.HtmlEncode(ManaCost));
+                _ = sb.Append(lineBreak);
             }
             else
             {
-                sb.Append(lineBreak);
+                _ = sb.Append(lineBreak);
             }
 
             if (!string.IsNullOrEmpty(Type))
             {
-                sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Type));
-                sb.Append(lineBreak);
+                _ = sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Type));
+                _ = sb.Append(lineBreak);
             }
 
             if (!string.IsNullOrEmpty(Text))
             {
-                sb.Append(WebUtility.HtmlEncode(Text));
+                _ = sb.Append(WebUtility.HtmlEncode(Text));
                 if (!sb.ToString().EndsWith("."))
                 {
-                    sb.Append('.');
+                    _ = sb.Append('.');
                 }
-                sb.Append(lineBreak);
+                _ = sb.Append(lineBreak);
             }
 
 
 
             if (!string.IsNullOrEmpty(Power) || !string.IsNullOrEmpty(Toughness))
             {
-                sb.Append(string.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
-                sb.Append(lineBreak);
+                _ = sb.Append(string.Format("<b>P/T: {0}/{1}</b>", Power, Toughness));
+                _ = sb.Append(lineBreak);
             }
 
             if (Loyalty.HasValue)
             {
-                sb.Append(string.Format("<b>Loyalty:</b> {0}", Loyalty.Value));
-                sb.Append(lineBreak);
+                _ = sb.Append(string.Format("<b>Loyalty:</b> {0}", Loyalty.Value));
+                _ = sb.Append(lineBreak);
             }
 
             if (!string.IsNullOrEmpty(Flavor))
             {
-                sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Flavor));
-                sb.Append(lineBreak);
+                _ = sb.AppendFormat("<i>{0}</i>", WebUtility.HtmlEncode(Flavor));
+                _ = sb.Append(lineBreak);
             }
 
             if (UseCredits())
             {
-                sb.Append($"Revealed by: <a href='{CreditsUrl}'>{Credits}</a>");
-                sb.Append(lineBreak);
+                _ = sb.Append($"Revealed by: <a href='{CreditsUrl}'>{Credits}</a>");
+                _ = sb.Append(lineBreak);
             }
 
-            sb.Append($"<a href='{FullUrlWebSite}'><i>Link</i></a>");
+            _ = sb.Append($"<a href='{FullUrlWebSite}'><i>Link</i></a>");
 
             return sb.ToString();
         }
@@ -277,60 +270,50 @@ namespace MagicNewCardsBot.StorageClasses
                 StringBuilder sb = new();
                 if (!string.IsNullOrEmpty(Name))
                 {
-                    sb.Append(Name);
+                    _ = sb.Append(Name);
                 }
 
-                sb.Append(" #MTG ");
+                _ = sb.Append(" #MTG ");
 
                 if (UseCredits())
                 {
-                    sb.Append($"Revealed by: {CreditsUrl}");
-                    sb.Append(lineBreak);
+                    _ = sb.Append($"Revealed by: {CreditsUrl}");
+                    _ = sb.Append(lineBreak);
                 }
 
-                sb.Append(lineBreak);
-                sb.Append(FullUrlWebSite);
+                _ = sb.Append(lineBreak);
+                _ = sb.Append(FullUrlWebSite);
 
-                var txt = sb.ToString();
+                string txt = sb.ToString();
                 if (txt.Length > 240)
                 {
-                    txt = txt.Substring(0, 239);
+                    txt = txt[..239];
                 }
                 return txt;
             }
         }
         public string GetRarityCharacter()
         {
-            if (Rarity.HasValue)
-            {
-                return Rarity switch
+            return Rarity.HasValue
+                ? Rarity switch
                 {
                     StorageClasses.Rarity.Common => "C",
                     StorageClasses.Rarity.Uncommon => "U",
                     StorageClasses.Rarity.Rare => "R",
                     StorageClasses.Rarity.Mythic => "M",
                     _ => string.Empty,
-                };
-            }
-            return string.Empty;
+                }
+                : string.Empty;
         }
 
         public override string ToString()
         {
-            if (!string.IsNullOrWhiteSpace(Name))
-            {
-                return $"{Name}";
-            }
-            else
-            {
-                return FullUrlWebSite;
-            }
+            return !string.IsNullOrWhiteSpace(Name) ? $"{Name}" : FullUrlWebSite;
         }
 
         public void AddExtraSide(Card card)
         {
-            if (ExtraSides == null)
-                ExtraSides = new List<Card>();
+            ExtraSides ??= new List<Card>();
             if (!ExtraSides.Exists(x => x.ImageUrl.Equals(card.ImageUrl)))
             {
                 ExtraSides.Add(card);

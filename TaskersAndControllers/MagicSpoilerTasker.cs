@@ -25,22 +25,22 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
         protected static bool IsSameCard(string url1, string url2)
         {
-            var endingUrl1 = url1[(url1.LastIndexOf('/') + 1)..];
+            string endingUrl1 = url1[(url1.LastIndexOf('/') + 1)..];
             string endingUrl2 = url2[(url2.LastIndexOf('/') + 1)..];
             return endingUrl1 == endingUrl2;
         }
 
         #region Overrided Methods
 
-        async override protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
+        protected override async IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
         {
             //loads the website
 
 
-            var feed = await FeedReader.ReadAsync(_websiteUrl + _page);
+            Feed feed = await FeedReader.ReadAsync(_websiteUrl + _page);
             //all the cards are a a href so we get all of that
 
-            foreach (var item in feed.Items)
+            foreach (FeedItem item in feed.Items)
             {
                 yield return new Card()
                 {
@@ -52,7 +52,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
         }
 
-        async override protected Task GetAdditionalInfoAsync(Card card)
+        protected override async Task GetAdditionalInfoAsync(Card card)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
@@ -90,13 +90,13 @@ namespace MagicNewCardsBot.TaskersAndControllers
                     { }
                     try
                     {
-                        var nodes = html.DocumentNode.SelectNodes("//li[@class='card-type']");
-                        foreach (var node in nodes)
+                        HtmlNodeCollection nodes = html.DocumentNode.SelectNodes("//li[@class='card-type']");
+                        foreach (HtmlNode node in nodes)
                         {
-                            var nodeText = node.InnerText.Trim();
+                            string nodeText = node.InnerText.Trim();
                             if (nodeText.Contains("Type:"))
                             {
-                                var type = nodeText.Replace("Type:", string.Empty).Trim();
+                                string type = nodeText.Replace("Type:", string.Empty).Trim();
                                 card.Type = type;
                             }
                         }
@@ -106,8 +106,8 @@ namespace MagicNewCardsBot.TaskersAndControllers
                     try
                     {
                         StringBuilder sb = new();
-                        var nodes = html.DocumentNode.SelectSingleNode("//div[@class='card-content']").ChildNodes;
-                        foreach (var node in nodes)
+                        HtmlNodeCollection nodes = html.DocumentNode.SelectSingleNode("//div[@class='card-content']").ChildNodes;
+                        foreach (HtmlNode node in nodes)
                         {
                             if (node.FirstChild != null &&
                                 node.FirstChild.Name == "a" &&
@@ -119,10 +119,10 @@ namespace MagicNewCardsBot.TaskersAndControllers
                             }
                             string txt = node.InnerText;
                             txt = txt.Replace("\n\n", "\n");
-                            sb.Append(txt);
+                            _ = sb.Append(txt);
                         }
                         //this code is a mess, but it works
-                        var txt2 = sb.ToString();
+                        string txt2 = sb.ToString();
                         txt2 = txt2.Replace("\n\n", "\n");
                         txt2 = txt2.Replace("\n\n", "\n");
                         txt2 = txt2.Replace("\n\n", "\n");

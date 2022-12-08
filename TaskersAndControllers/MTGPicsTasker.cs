@@ -24,7 +24,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
         #region Overrided Methods
 
-        async override protected IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
+        protected override async IAsyncEnumerable<Card> GetAvaliableCardsInWebSiteAsync()
         {
             List<Set> setsToCrawl = await Database.GetAllCrawlableSetsAsync();
             foreach (Set set in setsToCrawl)
@@ -45,7 +45,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                     int crawlsFromThisSite = 0;
                     foreach (HtmlNode node in nodesCards)
                     {
-                        var nodeImageCard = node.SelectSingleNode(".//img");
+                        HtmlNode nodeImageCard = node.SelectSingleNode(".//img");
                         //also the cards have a special class called 'card', so we use it to get the right ones
                         if (nodeImageCard != null &&
                             nodeImageCard.Attributes.Contains("src") &&
@@ -58,7 +58,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                             string imageUrl = nodeImageCard.Attributes["src"].Value.ToString();
                             imageUrl = ValidateAndFixUrl(imageUrl);
 
-                            var card = new Card
+                            Card card = new()
                             {
                                 FullUrlWebSite = cardUrl,
                                 ImageUrl = imageUrl
@@ -69,7 +69,9 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
                         //only get the lastest
                         if (crawlsFromThisSite == Database.MAX_CARDS)
+                        {
                             break;
+                        }
                     }
                 }
             }
@@ -81,13 +83,8 @@ namespace MagicNewCardsBot.TaskersAndControllers
             {
                 try
                 {
-                    var node = nodes[i];
-                    Card card;
-                    if (i == 0)
-                        card = mainCard;
-                    else
-                        card = mainCard.ExtraSides[i - 1];
-
+                    HtmlNode node = nodes[i];
+                    Card card = i == 0 ? mainCard : mainCard.ExtraSides[i - 1];
                     switch (field)
                     {
                         case CardFields.Name:
@@ -96,7 +93,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
 
                         case CardFields.ManaCost:
                             string totalCost = string.Empty;
-                            foreach (var childNode in node.ChildNodes)
+                            foreach (HtmlNode childNode in node.ChildNodes)
                             {
                                 string imgUrl = childNode.Attributes["src"].Value;
                                 if (imgUrl.EndsWith(".png"))
@@ -119,12 +116,14 @@ namespace MagicNewCardsBot.TaskersAndControllers
                             type = type.Trim();
 
                             if (!string.IsNullOrEmpty(type))
+                            {
                                 card.Type = type;
+                            }
 
                             break;
                         case CardFields.Text:
                             StringBuilder sb = new();
-                            foreach (var childNode in node.ChildNodes)
+                            foreach (HtmlNode childNode in node.ChildNodes)
                             {
                                 if (childNode.Attributes != null)
                                 {
@@ -132,7 +131,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                                     {
                                         string symbol = childNode.Attributes["alt"].Value;
                                         symbol = symbol.Replace("%", "");
-                                        sb.Append(symbol.ToUpper());
+                                        _ = sb.Append(symbol.ToUpper());
                                         continue;
                                     }
                                     else if (childNode.Attributes["onclick"] != null && childNode.Attributes["onclick"].Value.Contains("LoadGlo"))
@@ -147,18 +146,20 @@ namespace MagicNewCardsBot.TaskersAndControllers
                                 text = text.Replace("  ", " ");
                                 text = WebUtility.HtmlDecode(text);
 
-                                sb.Append(text);
+                                _ = sb.Append(text);
                             }
 
                             string sbString = sb.ToString();
                             if (!string.IsNullOrEmpty(sbString))
+                            {
                                 card.Text = sbString;
+                            }
 
                             break;
                         case CardFields.PT:
-                            foreach (var childNodes in node.ChildNodes)
+                            foreach (HtmlNode childNodes in node.ChildNodes)
                             {
-                                var text = childNodes.InnerText.Trim();
+                                string text = childNodes.InnerText.Trim();
                                 text = text.Replace("\n", string.Empty);
                                 if (text.Contains('/'))
                                 {
@@ -218,8 +219,8 @@ namespace MagicNewCardsBot.TaskersAndControllers
         {
             try
             {
-                var nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScan']");
-                var nodeImage = nodeParent.SelectSingleNode(".//img");
+                HtmlNode nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScan']");
+                HtmlNode nodeImage = nodeParent.SelectSingleNode(".//img");
                 string urlNewImage = nodeImage.Attributes["src"].Value.ToString();
                 urlNewImage = ValidateAndFixUrl(urlNewImage);
                 return urlNewImage;
@@ -233,44 +234,55 @@ namespace MagicNewCardsBot.TaskersAndControllers
         {
 
             //NAME
-            var nodes = html.DocumentNode.SelectNodes(".//div[@class='Card20']");
+            HtmlNodeCollection nodes = html.DocumentNode.SelectNodes(".//div[@class='Card20']");
 
             if (nodes != null)
+            {
                 ProcessFieldByType(nodes, card, CardFields.Name);
+            }
 
             //MANA COST
             nodes = html.DocumentNode.SelectNodes(".//div[@style='height:25px;float:right;']");
 
             if (nodes != null)
+            {
                 ProcessFieldByType(nodes, card, CardFields.ManaCost);
+            }
 
             //TEXT
             nodes = html.DocumentNode.SelectNodes(".//div[@id='EngShort']");
             if (nodes != null)
+            {
                 ProcessFieldByType(nodes, card, CardFields.Text);
+            }
 
-            var g16nodes = html.DocumentNode.SelectNodes(".//div[@class='CardG16']");
+            HtmlNodeCollection g16nodes = html.DocumentNode.SelectNodes(".//div[@class='CardG16']");
 
             //TYPE 
-            var nodesType = g16nodes.Where(x => x.Attributes["style"] != null &&
+            List<HtmlNode> nodesType = g16nodes.Where(x => x.Attributes["style"] != null &&
                                                 x.Attributes["style"].Value.Trim().Equals("padding:5px 0px 5px 0px;")
                                             ).ToList();
 
             if (nodesType != null)
+            {
                 ProcessFieldByType(nodesType, card, CardFields.Type);
+            }
 
             //POWER AND TOUGHNESS AND LOYALTY
-            var nodesPT = g16nodes.Where(x => x.Attributes["align"] != null &&
+            List<HtmlNode> nodesPT = g16nodes.Where(x => x.Attributes["align"] != null &&
                                             !string.IsNullOrEmpty(x.InnerText.Trim()) &&
                                             x.Attributes["align"].Value.Trim().Equals("right")).ToList();
 
             if (nodesPT != null)
+            {
                 ProcessFieldByType(nodesPT, card, CardFields.PT);
+            }
 
-            var nodesRarity = html.DocumentNode.SelectNodes("//img[contains(@src,'graph/rarity/')]");
+            HtmlNodeCollection nodesRarity = html.DocumentNode.SelectNodes("//img[contains(@src,'graph/rarity/')]");
             if (nodesRarity != null)
+            {
                 ProcessFieldByType(nodesRarity, card, CardFields.Rarity);
-
+            }
         }
 
         private void GetExtraSides(Card card, HtmlDocument html)
@@ -278,10 +290,10 @@ namespace MagicNewCardsBot.TaskersAndControllers
             //SEE IF IT HAS EXTRA IMAGES
             try
             {
-                var nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScanBack']");
+                HtmlNode nodeParent = html.DocumentNode.SelectSingleNode(".//div[@id='CardScanBack']");
                 if (nodeParent != null)
                 {
-                    var nodeImage = nodeParent.SelectSingleNode(".//img");
+                    HtmlNode nodeImage = nodeParent.SelectSingleNode(".//img");
                     string urlNewImage = nodeImage?.Attributes["src"].Value.ToString();
                     urlNewImage = ValidateAndFixUrl(urlNewImage);
 
@@ -295,7 +307,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
             { }
         }
 
-        async override protected Task GetAdditionalInfoAsync(Card card)
+        protected override async Task GetAdditionalInfoAsync(Card card)
         {
             //we do all of this in empty try catches because it is not mandatory information
             try
@@ -314,20 +326,20 @@ namespace MagicNewCardsBot.TaskersAndControllers
                 {
                     for (int i = 1; i < 10; i++)
                     {
-                        var resultNodes = html.DocumentNode.SelectNodes($"//text()[. = '{i}']");
+                        HtmlNodeCollection resultNodes = html.DocumentNode.SelectNodes($"//text()[. = '{i}']");
                         if (resultNodes != null)
                         {
                             foreach (HtmlNode node in resultNodes)
                             {
-                                var nodeParent = node.ParentNode;
+                                HtmlNode nodeParent = node.ParentNode;
                                 if (nodeParent != null && nodeParent.Attributes.Count > 0 && nodeParent.Attributes["href"] != null)
                                 {
-                                    var hrefAlternative = nodeParent.Attributes["href"].Value;
+                                    string hrefAlternative = nodeParent.Attributes["href"].Value;
                                     hrefAlternative = ValidateAndFixUrl(hrefAlternative);
 
-                                    var alternativeHtmlDoc = await GetHtmlDocumentFromUrlAsync(hrefAlternative);
+                                    HtmlDocument alternativeHtmlDoc = await GetHtmlDocumentFromUrlAsync(hrefAlternative);
 
-                                    var alernativeImage = GetImageUrlFromHtmlDoc(alternativeHtmlDoc);
+                                    string alernativeImage = GetImageUrlFromHtmlDoc(alternativeHtmlDoc);
 
                                     if (!string.IsNullOrEmpty(alernativeImage))
                                     {

@@ -44,15 +44,19 @@ namespace MagicNewCardsBot.Helpers
                 case HtmlNodeType.Text:
                     // script and style must not be output
                     string parentName = node.ParentNode.Name;
-                    if (parentName == "script" || parentName == "style")
+                    if (parentName is "script" or "style")
+                    {
                         break;
+                    }
 
                     // get text
                     html = ((HtmlTextNode)node).Text;
 
                     // is it in fact a special closing node output as text?
                     if (HtmlNode.IsOverlappedClosingElement(html))
+                    {
                         break;
+                    }
 
                     // check the text is meaningful and not a bunch of whitespaces
                     if (html.Trim().Length > 0)
