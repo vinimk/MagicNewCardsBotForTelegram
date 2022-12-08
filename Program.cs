@@ -1,25 +1,28 @@
-namespace MagicNewCardsBot
+namespace MagicNewCardsBot;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
+        CreateHostBuilder(args).Build().Run();
+    }
 
-        public static IHostBuilder CreateHostBuilder(string[] args)
-        {
-            return Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args)
+            .ConfigureServices((hostContext, services) =>
+            {
+                IConfiguration configuration = hostContext.Configuration;
+
+                var options = configuration.GetSection("Configs").Get<WorkerOptions>();
+                ArgumentNullException.ThrowIfNullOrEmpty(options);
+                if (options != null)
                 {
-                    IConfiguration configuration = hostContext.Configuration;
+                    _ = services.AddSingleton(options);
+                }
 
-                    var options = configuration.GetSection("Configs").Get<WorkerOptions>();
-
-                    _ = services.AddSingleton(options!);
-
-                    _ = services.AddHostedService<Worker>();
-                });
-        }
+                _ = services.AddHostedService<Worker>();
+            });
     }
 }
+
