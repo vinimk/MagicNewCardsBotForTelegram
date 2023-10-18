@@ -14,7 +14,7 @@ public class Program
             {
                 IConfiguration configuration = hostContext.Configuration;
 
-                var options = configuration.GetSection("Configs").Get<WorkerOptions>();
+                WorkerOptions options = configuration.GetSection("Configs").Get<WorkerOptions>();
                 if (options != null)
                 {
                     _ = services.AddSingleton(options);

@@ -254,13 +254,10 @@ namespace MagicNewCardsBot.Helpers
                 conn.Close();
             }
 
-            if (isSent.HasValue &&
-                isSent.Value == 0)
-            {
-                return CardStatus.NotSent;
-            }
-
-            return hasRarity.HasValue ? hasRarity.Value == 1 ? CardStatus.Complete : CardStatus.WithoutRarity : CardStatus.NotFound;
+            return isSent.HasValue &&
+                isSent.Value == 0
+                ? CardStatus.NotSent
+                : hasRarity.HasValue ? hasRarity.Value == 1 ? CardStatus.Complete : CardStatus.WithoutRarity : CardStatus.NotFound;
         }
 
         public static async Task<bool> ChatExistsAsync(Chat chat)

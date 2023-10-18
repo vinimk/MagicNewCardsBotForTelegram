@@ -84,7 +84,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
         {
 
 
-            InputMediaPhoto photo = new(new InputMedia(card.ImageUrl))
+            InputMediaPhoto photo = new(new InputFileUrl(card.ImageUrl))
             {
                 Caption = GetMessageText(card),
                 ParseMode = Telegram.Bot.Types.Enums.ParseMode.Html
@@ -126,7 +126,7 @@ namespace MagicNewCardsBot.TaskersAndControllers
                 }
                 else
                 {
-                    Message message = await _botClient.SendPhotoAsync(chatId: chat, photo: card.ImageUrl, caption: GetMessageText(card), parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
+                    Message message = await _botClient.SendPhotoAsync(chatId: chat, new InputFileUrl(card.ImageUrl), caption: GetMessageText(card), parseMode: Telegram.Bot.Types.Enums.ParseMode.Html);
                 }
             }
             catch (Exception ex) //sometimes this exception is not a problem, like if the bot was removed from the group

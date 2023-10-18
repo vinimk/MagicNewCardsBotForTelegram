@@ -113,12 +113,8 @@ namespace MagicNewCardsBot.StorageClasses
         //we blacklist some URLs for credits that are from wizards or something like that
         public bool UseCredits()
         {
-            if (string.IsNullOrWhiteSpace(Credits) && string.IsNullOrWhiteSpace(CreditsUrl))
-            {
-                return false;
-            }
-
-            return !CreditsUrl.Contains("card-image-gallery") && !CreditsUrl.Contains("www.twitch.tv/magic");
+            return (!string.IsNullOrWhiteSpace(Credits) || !string.IsNullOrWhiteSpace(CreditsUrl))
+&& !CreditsUrl.Contains("card-image-gallery") && !CreditsUrl.Contains("www.twitch.tv/magic");
         }
 
         #region Methods
